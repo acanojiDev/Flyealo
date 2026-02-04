@@ -1,0 +1,131 @@
+<div class="travel-form">
+  <h2 class="travel-form__title">Planifica tu viaje con IA</h2>
+
+  <form [formGroup]="travelForm" class="travel-form__form" (ngSubmit)="onSubmit()">
+    <div class="travel-form__group">
+      <label class="travel-form__label" for="destinationInput">¿A dónde quieres ir?</label>
+      <div class="travel-form__input-group">
+        <input
+          type="text"
+          id="destinationInput"
+          formControlName="destinationInput"
+          class="travel-form__input"
+          placeholder="Añade una ciudad o lugar..."
+          (keydown)="onKeyDown($event)"
+        />
+        <button type="button" class="travel-form__button" (click)="addDestination()">+</button>
+      </div>
+
+      <div class="travel-form__destinations">
+        @for (dest of cities.value; track $index; let index = $index) {
+          <span class="travel-form__destination">
+            {{ dest }}
+            <button
+              type="button"
+              class="travel-form__destination-remove"
+              (click)="removeDestination(index)"
+            >
+              x
+            </button>
+          </span>
+        }
+      </div>
+
+      @if (cities.errors?.['minLengthArray'] && cities.touched) {
+        <span class="travel-form__error"> Debes agregar al menos 1 ciudad </span>
+      }
+    </div>
+
+    <div class="travel-form__group-special">
+      <div class="travel-form__group travel-form__group-special-item">
+        <label class="travel-form__label" for="budget">Presupuesto (Opcional)</label>
+        <input
+          type="text"
+          id="budget"
+          formControlName="budget"
+          class="travel-form__input"
+          placeholder="Ej: 500€ por persona, sin límite..."
+        />
+      </div>
+
+      <div class="travel-form__group travel-form__group-special-item">
+        <label class="travel-form__label" for="days">Número de días</label>
+        <input
+          type="number"
+          id="days"
+          formControlName="days"
+          class="travel-form__input"
+          placeholder="1"
+          min="1"
+        />
+
+        @if (days?.invalid && days?.dirty) {
+          <span class="travel-form__error"> Debe ir al menos 1 día </span>
+        }
+      </div>
+    </div>
+
+    <div class="travel-form__group">
+      <div class="travel-form__group-header">
+        <label class="travel-form__label" for="interests">Intereses</label>
+        <span>{{ interests.value.length }}/3 seleccionados</span>
+      </div>
+      <div
+        class="travel-form__interests"
+        id="interests"
+        role="group"
+        aria-label="Selecciona tus intereses"
+      >
+        @for (interest of suggestedInterests; track $index) {
+          <div
+            class="travel-form__interest"
+            [class.travel-form__interest--selected]="interests.value.includes(interest.name)"
+            [class.travel-form__interest--disabled]="
+              !interests.value.includes(interest.name) && interests.value.length >= 3
+            "
+            (click)="toggleInterest(interest.name)"
+            role="button"
+            [attr.aria-pressed]="interests.value.includes(interest)"
+          >
+            <span class="travel-form__interest-icon">
+              <i [class]="interest.icon"></i>
+            </span>
+            <span class="travel-form__interest-label">{{ interest.name }}</span>
+          </div>
+        }
+      </div>
+
+      @if (interests.errors?.['minLengthArray'] && interests.touched) {
+        <span class="travel-form__error"> Debes seleccionar al menos 1 interés </span>
+      }
+    </div>
+
+    <div class="travel-form__group">
+      <label class="travel-form__label" for="about">¿Qué te gustaría saber? (Opcional)</label>
+      <textarea
+        id="about"
+        class="travel-form__textarea"
+        formControlName="about"
+        rows="4"
+        placeholder="Ej: Quiero visitar los monumentos más importantes de Roma, con especial interés en la historia antigua."
+      ></textarea>
+
+      @if (about?.invalid && about?.dirty) {
+        <span class="travel-form__error"> Este campo es requerido </span>
+      }
+    </div>
+
+    <button
+      type="submit"
+      class="travel-form__submit"
+      [disabled]="
+        isLoading() ||
+        !travelForm.valid ||
+        cities.value.length === 0 ||
+        interests.value.length === 0
+      "
+    >
+      {{ isLoading() ? 'Generando itinerario...' : 'Generar Itinerario' }}
+    </button>
+  </form>
+</div>

@@ -1,0 +1,27 @@
+<app-hero (loginClick)="openLogin()" (registerClick)="openRegister()"></app-hero>
+
+<dialog #loginDialog class="auth-dialog">
+  <div class="auth-dialog__content">
+    <button class="auth-dialog__close" (click)="closeLogin()">×</button>
+    <app-login-component
+      (loginSubmit)="handleLogin($event)"
+      (googleSignIn)="handleGoogleSignIn()">
+    </app-login-component>
+  </div>
+</dialog>
+
+<dialog #registerDialog class="auth-dialog">
+  <div class="auth-dialog__content">
+    <button class="auth-dialog__close" (click)="closeRegister()">×</button>
+    <app-register-component
+      (registerSubmit)="handleRegister($event)"
+      (googleSignIn)="handleGoogleSignIn()">
+    </app-register-component>
+  </div>
+</dialog>
+
+<app-itinerary-preview></app-itinerary-preview>
+<app-popular-destinations></app-popular-destinations>
+<app-idea-to-itinerary></app-idea-to-itinerary>
+<app-testimonials></app-testimonials>
+<app-footer></app-footer>

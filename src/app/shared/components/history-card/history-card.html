@@ -1,0 +1,50 @@
+<div class="history-card" (click)="onCardClick()">
+  
+  <!-- Card content -->
+  <div class="history-card__content">
+    <div class="history-card__header">
+      <div class="history-card__cities">
+        <i class="pi pi-map-marker"></i>
+        <div class="history-card__cities-list">
+          @for (city of itinerary().cities; track $index) {
+            <span class="history-card__city-tag">{{ city }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary - Main title -->
+    <h3 class="history-card__title">
+      {{ itinerary().itinerary?.summary || 'Itinerary without description' }}
+    </h3>
+
+    <!-- Divider -->
+    <div class="history-card__divider"></div>
+
+    <!-- Footer: Days and Budget -->
+    <div class="history-card__footer">
+      <!-- Days -->
+      <div class="history-card__info">
+        <div class="history-card__icon history-card__icon--blue">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="history-card__info-text">
+          <p class="history-card__label">Duration</p>
+          <p class="history-card__value">{{ itinerary().days }} {{ itinerary().days === 1 ? 'day' : 'days' }}</p>
+        </div>
+      </div>
+
+      <!-- Budget -->
+      <div class="history-card__info">
+        <div class="history-card__icon history-card__icon--green">
+          <i class="pi pi-wallet"></i>
+        </div>
+        <div class="history-card__info-text">
+          <p class="history-card__label">Budget</p>
+          <p class="history-card__value">{{ itinerary().budget || 'N/A' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

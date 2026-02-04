@@ -1,0 +1,192 @@
+.how {
+  color: var(--color-text-primary);
+  padding: 8rem 1.5rem;
+  transition: background-color 0.3s ease;
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  &__header {
+    max-width: 600px;
+    margin-bottom: 5rem;
+  }
+
+  &__title {
+    font-size: 3.5rem;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
+
+    @media (max-width: 768px) {
+      font-size: 2.5rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 2rem;
+    }
+  }
+
+  &__subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  &__steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 6rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3rem;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+      text-align: center;
+      gap: 2rem;
+      padding: 2.5rem 1.5rem;
+    }
+  }
+
+  &__cta-title {
+    font-size: 2rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
+    }
+  }
+
+  &__cta-text {
+    color: #a3a3a3;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  &__cta-actions {
+    display: flex;
+    gap: 1.25rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+}
+
+/* =====================
+   Step Card
+   ===================== */
+
+.step-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-lg);
+
+  &:hover {
+    transform: translateY(-8px);
+  }
+
+  &__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: #000;
+    }
+
+    img {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__step {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  &__description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+  }
+}
+
+/* =====================
+   Buttons
+   ===================== */
+
+// Redefined in testimonials, but keeping here if scoped or needed local override
+.button {
+  border-radius: var(--radius-full);
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+
+  &--primary {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: 1px solid var(--color-border);
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+}

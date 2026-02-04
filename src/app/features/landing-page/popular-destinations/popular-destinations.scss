@@ -1,0 +1,168 @@
+.destinations {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+  }
+
+  &__title {
+    font-size: 2.5rem;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.03em;
+
+    @media (max-width: 480px) {
+      font-size: 2rem;
+    }
+  }
+
+  &__subtitle {
+    color: var(--color-text-secondary);
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  &__link {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    padding-bottom: 2px;
+    border-bottom: 2px solid var(--color-border);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-text-primary);
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 280px);
+    gap: 1.5rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: auto;
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+}
+
+/* =========================
+   Destination Card
+   ========================= */
+
+.destination-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  background: var(--color-background-soft);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &:hover &__image {
+    transform: scale(1.1);
+  }
+
+  &__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem;
+    color: #ffffff;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.02em;
+    color: #ffffff; // Contrast on image
+  }
+
+  &__button {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    margin-top: 1.25rem;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--color-background-soft);
+      transform: scale(1.05);
+    }
+  }
+
+  /* ===== Modifiers ===== */
+
+  &--large {
+    grid-column: span 2;
+    grid-row: span 2;
+
+    @media (max-width: 1024px) {
+      grid-row: span 1;
+    }
+
+    @media (max-width: 600px) {
+      grid-column: span 1;
+    }
+  }
+
+  &--small {
+    height: 100%;
+
+    @media (max-width: 1024px) {
+      height: 280px;
+    }
+  }
+
+  &--wide {
+    grid-column: span 2;
+    height: 280px;
+
+    @media (max-width: 600px) {
+      grid-column: span 1;
+    }
+  }
+}

@@ -1,0 +1,137 @@
+<header class="header">
+  <div class="header__container">
+    <div class="header__brand" routerLink="">
+      <img width="150px" src="flyealo.ico">
+    </div>
+
+    <!-- Desktop Navigation - Only shown when user is NOT authenticated -->
+    @if (!isAuthenticated()) {
+      <nav class="header__nav">
+        <a class="header__link">Destinations</a>
+        <a class="header__link">How it works</a>
+        <a class="header__link">Features</a>
+        <a class="header__link">Pricing</a>
+      </nav>
+    }
+
+    <!-- Actions section: different content based on authentication status -->
+    <div style="display: flex; align-items: center; gap: 1rem">
+      @if (!isAuthenticated()) {
+        <button class="header__login-btn" (click)="loginClick.emit()">Log in</button>
+        <button class="header__cta" (click)="registerClick.emit()">Sign up</button>
+      }
+
+      @if (isAuthenticated()) {
+        <button class="header__itineraries-btn" (click)="toggleSidebar()">My itineraries</button>
+        <button class="header__logout-btn header__logout-btn--compact" (click)="logout()" title="Log out">
+          <i class="pi pi-sign-out"></i>
+        </button>
+      }
+
+      <button
+        class="header__theme-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="isDarkTheme() ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        @if (isDarkTheme()) {
+          <i class="pi pi-sun"></i>
+        } @else {
+          <i class="pi pi-moon"></i>
+        }
+      </button>
+
+
+      <button
+        class="header__hamburger"
+        (click)="toggleMenu()"
+        [class.header__hamburger--open]="isMenuOpen()"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+  </div>
+
+  <!-- Mobile Menu - Navigation Landing -->
+  @if (!isAuthenticated()) {
+    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
+      <nav class="header__mobile-nav">
+        <a class="header__mobile-link" (click)="toggleMenu()">Destinations</a>
+        <a class="header__mobile-link" (click)="toggleMenu()">How it works</a>
+        <a class="header__mobile-link" (click)="toggleMenu()">Features</a>
+        <a class="header__mobile-link" (click)="toggleMenu()">Pricing</a>
+
+        <div class="header__mobile-actions">
+          <button class="header__mobile-link" (click)="loginClick.emit(); toggleMenu()">
+            Log in
+          </button>
+          <button class="header__mobile-cta" (click)="registerClick.emit(); toggleMenu()">
+            Sign up
+          </button>
+        </div>
+      </nav>
+    </div>
+  }
+
+  <!-- Mobile Menu - itineraries -->
+  @if (isAuthenticated()) {
+    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
+      <div class="header__mobile-travels">
+        <div class="header__mobile-travels-header">
+          <h3>My Itineraries</h3>
+        </div>
+
+        <div class="header__mobile-travels-list">
+          @if (isLoadingTravels()) {
+            <div class="header__loading">
+              <p>Loading your itineraries...</p>
+            </div>
+          } @else if (userTravels().length === 0) {
+            <p class="header__empty-state">You don't have any itineraries yet</p>
+          } @else {
+            @for (travel of userTravels(); track travel.id) {
+              <app-history-card
+                [itinerary]="travel"
+                (cardClick)="goToItinerary($event)"
+              ></app-history-card>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Desktop Sidebar - Itineraries -->
+  @if (isAuthenticated()) {
+    @if (isSidebarOpen()) {
+      <div class="header__sidebar-overlay" (click)="toggleSidebar()"></div>
+    }
+
+    <div class="header__sidebar" [class.header__sidebar--open]="isSidebarOpen()">
+      <div class="header__sidebar-header">
+        <h2>My Itineraries</h2>
+        <button class="header__sidebar-close" (click)="toggleSidebar()">×</button>
+      </div>
+
+      <div class="header__sidebar-content">
+        @if (isLoadingTravels()) {
+          <div class="header__loading">
+            <p>Loading your itineraries...</p>
+          </div>
+        } @else if (userTravels().length === 0) {
+          <p class="header__empty-state">You don't have any itineraries yet</p>
+        } @else {
+          @for (travel of userTravels(); track travel.id) {
+            <app-history-card
+              [itinerary]="travel"
+              (cardClick)="goToItinerary($event)"
+            ></app-history-card>
+          }
+        }
+      </div>
+    </div>
+  }
+</header>
