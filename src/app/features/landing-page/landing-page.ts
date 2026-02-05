@@ -4,6 +4,7 @@ import { Hero } from './hero/hero';
 import { ItineraryPreview } from './itinerary-preview/itinerary-preview';
 import { PopularDestinations } from './popular-destinations/popular-destinations';
 import { IdeaToItinerary } from './idea-to-itinerary/idea-to-itinerary';
+import { Pricing } from './pricing/pricing';
 import { Testimonials } from './testimonials/testimonials';
 import { Footer } from './footer/footer';
 import { LoginComponent } from './login-component/login-component';
@@ -20,6 +21,7 @@ import { Seo } from '../../core/services/seo';
     ItineraryPreview,
     PopularDestinations,
     IdeaToItinerary,
+    Pricing,
     Testimonials,
     Footer,
     LoginComponent,

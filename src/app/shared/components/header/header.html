@@ -1,33 +1,22 @@
 <header class="header">
   <div class="header__container">
-    <div class="header__brand">
-      <img width="150px" src="flyealo.ico">
+    <!-- Logo -->
+    <div class="header__brand" routerLink="" (click)="closeAllMenus()">
+      <img width="150px" src="flyealo.ico" alt="Flyealo" />
     </div>
 
-    <!-- Desktop Navigation - Only shown when user is NOT authenticated -->
+    <!-- Desktop Navigation - Only shown when NOT authenticated -->
     @if (!isAuthenticated()) {
       <nav class="header__nav">
-        <a class="header__link" href="#" (click)="openNavInfo($event, 'destinations')">Destinations</a>
-        <a class="header__link" href="#" (click)="openNavInfo($event, 'howItWorks')">How it works</a>
-        <a class="header__link" href="#" (click)="openNavInfo($event, 'features')">Features</a>
-        <a class="header__link" href="#" (click)="openNavInfo($event, 'pricing')">Pricing</a>
+        <a class="header__link" href="#destination">Destinations</a>
+        <a class="header__link" href="#how-it-works">How it works</a>
+        <a class="header__link" href="#pricing">Pricing</a>
       </nav>
     }
 
-    <!-- Actions section: different content based on authentication status -->
-    <div style="display: flex; align-items: center; gap: 1rem">
-      @if (!isAuthenticated()) {
-        <button class="header__login-btn" (click)="loginClick.emit()">Log in</button>
-        <button class="header__cta" (click)="registerClick.emit()">Sign up</button>
-      }
-
-      @if (isAuthenticated()) {
-        <button class="header__itineraries-btn" (click)="toggleSidebar()">My itineraries</button>
-        <button class="header__logout-btn header__logout-btn--compact" (click)="logout()" title="Log out">
-          <i class="pi pi-sign-out"></i>
-        </button>
-      }
-
+    <!-- Right Actions Section -->
+    <div class="header__actions">
+      <!-- Theme Toggle (Always visible) -->
       <button
         class="header__theme-btn"
         (click)="toggleTheme()"
@@ -40,51 +29,91 @@
         }
       </button>
 
+      <!-- Desktop Auth Actions (NOT authenticated) -->
+      @if (!isAuthenticated()) {
+        <button class="header__login-btn" (click)="loginClick.emit()">Log in</button>
+        <button class="header__cta" (click)="registerClick.emit()">Sign up</button>
+      }
 
-      <button
-        class="header__hamburger"
-        (click)="toggleMenu()"
-        [class.header__hamburger--open]="isMenuOpen()"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+      <!-- Desktop My Itineraries Button (Authenticated) -->
+      @if (isAuthenticated()) {
+        <button class="header__itineraries-btn" (click)="toggleSidebar()">
+          <i class="pi pi-list"></i>
+          My itineraries
+        </button>
+      }
+
+      <!-- Hamburger Menu (Mobile) -->
+      @if (!isMenuOpen()) {
+        <button
+          class="header__hamburger"
+          (click)="toggleMenu()"
+          [class.header__hamburger--open]="isMenuOpen()"
+          aria-label="Toggle menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      }
     </div>
-
-    <!-- Hamburger Menu Button -->
   </div>
 
-  <!-- Mobile Menu - Navigation Landing -->
-  @if (!isAuthenticated()) {
-    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
-      <nav class="header__mobile-nav">
-        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'destinations', true)">Destinations</a>
-        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'howItWorks', true)">How it works</a>
-        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'features', true)">Features</a>
-        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'pricing', true)">Pricing</a>
+  <!-- ========================================
+       MOBILE MENU OVERLAY (Blur background)
+       ======================================== -->
+  @if (isMenuOpen()) {
+    <div class="header__mobile-overlay" (click)="closeMenu()"></div>
+  }
 
-        <div class="header__mobile-actions">
-          <button class="header__mobile-link" (click)="loginClick.emit(); toggleMenu()">
-            Log in
-          </button>
-          <button class="header__mobile-cta" (click)="registerClick.emit(); toggleMenu()">
-            Sign up
-          </button>
-        </div>
-      </nav>
+  <!-- ========================================
+       MOBILE MENU - NOT AUTHENTICATED
+       ======================================== -->
+  @if (!isAuthenticated() && isMenuOpen()) {
+    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
+      <!-- Header with close button -->
+      <div class="header__mobile-menu-header">
+        <button class="header__mobile-close-btn" (click)="closeMenu()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="header__mobile-menu-content">
+        <nav class="header__mobile-nav">
+          <a class="header__mobile-link" href="#destination" (click)="closeMenu()">Destinations</a>
+          <a class="header__mobile-link" href="#how-it-works" (click)="closeMenu()">How it works</a>
+          <a class="header__mobile-link" href="#pricing" (click)="closeMenu()">Pricing</a>
+        </nav>
+      </div>
+
+      <!-- Auth Actions at Bottom (Sticky) -->
+      <div class="header__mobile-actions">
+        <button class="header__mobile-login" (click)="loginClick.emit(); closeMenu()">
+          Log in
+        </button>
+        <button class="header__mobile-cta" (click)="registerClick.emit(); closeMenu()">
+          Sign up
+        </button>
+      </div>
     </div>
   }
 
-  <!-- Mobile Menu - itineraries -->
-  @if (isAuthenticated()) {
+  <!-- ========================================
+       MOBILE MENU - AUTHENTICATED (Itineraries)
+       ======================================== -->
+  @if (isAuthenticated() && isMenuOpen()) {
     <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
-      <div class="header__mobile-travels">
-        <div class="header__mobile-travels-header">
+      <div class="header__mobile-itineraries">
+        <!-- Header with close button -->
+        <div class="header__mobile-itineraries-header">
           <h3>My Itineraries</h3>
+          <button class="header__mobile-close-btn" (click)="closeMenu()">
+            <i class="pi pi-times"></i>
+          </button>
         </div>
 
-        <div class="header__mobile-travels-list">
+        <!-- Itineraries List (Scrollable) -->
+        <div class="header__mobile-itineraries-list">
           @if (isLoadingTravels()) {
             <div class="header__loading">
               <p>Loading your itineraries...</p>
@@ -100,22 +129,37 @@
             }
           }
         </div>
+
+        <!-- Bottom Actions (Sticky) -->
+        <div class="header__mobile-actions">
+          <div class="header__mobile-divider"></div>
+          <button class="header__mobile-logout" (click)="logout()">
+            <i class="pi pi-sign-out"></i>
+            Log out
+          </button>
+        </div>
       </div>
     </div>
   }
 
-  <!-- Desktop Sidebar - Itineraries -->
+  <!-- ========================================
+       DESKTOP SIDEBAR - AUTHENTICATED
+       ======================================== -->
   @if (isAuthenticated()) {
     @if (isSidebarOpen()) {
       <div class="header__sidebar-overlay" (click)="toggleSidebar()"></div>
     }
 
     <div class="header__sidebar" [class.header__sidebar--open]="isSidebarOpen()">
+      <!-- Header -->
       <div class="header__sidebar-header">
         <h2>My Itineraries</h2>
-        <button class="header__sidebar-close" (click)="toggleSidebar()">&times;</button>
+        <button class="header__sidebar-close" (click)="toggleSidebar()">
+          <i class="pi pi-times"></i>
+        </button>
       </div>
 
+      <!-- Content -->
       <div class="header__sidebar-content">
         @if (isLoadingTravels()) {
           <div class="header__loading">
@@ -127,10 +171,19 @@
           @for (travel of userTravels(); track travel.id) {
             <app-history-card
               [itinerary]="travel"
+              [routerLink]="['/details']"
               (cardClick)="goToItinerary($event)"
             ></app-history-card>
           }
         }
+      </div>
+
+      <!-- Footer with Logout -->
+      <div class="header__sidebar-footer">
+        <button class="header__sidebar-logout" (click)="logout()">
+          <i class="pi pi-sign-out"></i>
+          Log out
+        </button>
       </div>
     </div>
   }

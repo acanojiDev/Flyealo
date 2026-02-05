@@ -9,7 +9,7 @@ import { InfoModalService } from '../../../core/services/info-modal';
 
 @Component({
   selector: 'app-header',
-  imports: [HistoryCard],
+  imports: [HistoryCard, RouterLink],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
@@ -22,16 +22,18 @@ export class Header {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
+  // Signals
   isMenuOpen = signal(false);
   isSidebarOpen = signal(false);
   isDarkTheme = signal(false);
 
-  // Acceso a signals de servicios
+  // Access to service signals
   isAuthenticated = this.authService.isAuthenticated;
   currentUser = this.authService.currentUser;
   userTravels = this.itineraryService.userTravels;
   isLoadingTravels = this.itineraryService.isLoading;
 
+  // Outputs
   loginClick = output();
   registerClick = output();
 
@@ -71,7 +73,7 @@ export class Header {
       title: 'Simple, flexible plans',
       description: 'Start with a free week plan and upgrade when you are ready.',
       items: [
-        'Free trial for your first itinerary',
+        'Free trial for your first week',
         'Flexible monthly subscriptions',
         'Cancel anytime',
       ],
@@ -85,6 +87,18 @@ export class Header {
         this.isDarkTheme.set(true);
         this.document.documentElement.classList.add('dark');
       }
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      effect(() => {
+        const isMenuOpen = this.isMenuOpen();
+        const isSidebarOpen = this.isSidebarOpen();
+        
+        if (isMenuOpen || isSidebarOpen) {
+          this.document.body.style.overflow = 'hidden';
+        } else {
+          this.document.body.style.overflow = 'auto';
+        }
+      });
     }
     effect(() => {
       const isOpen = this.isSidebarOpen() || this.isMenuOpen();
@@ -112,42 +126,34 @@ export class Header {
     this.isMenuOpen.update(val => !val);
   }
 
-  toggleSidebar() {
-    this.isSidebarOpen.update(val => !val);
-  }
-
   closeMenu() {
     this.isMenuOpen.set(false);
+  }
+
+  toggleSidebar() {
+    this.isSidebarOpen.update(val => !val);
   }
 
   closeSidebar() {
     this.isSidebarOpen.set(false);
   }
 
+  closeAllMenus() {
+    this.closeMenu();
+    this.closeSidebar();
+  }
+
   goToItinerary(id: string) {
     this.closeSidebar();
     this.closeMenu();
-
     this.itineraryService.setCurrentTravelById(id);
-    this.router.navigate(['/details']);
   }
 
   logout() {
-    this.authService.signOut().then(
-      () => {
-        this.itineraryService.unsubscribeFromTravels();
-        this.toggleSidebar();
-        this.toggleMenu();
-        this.router.navigate(['/'])
-      });
-  }
-
-  openNavInfo(event: Event, key: keyof typeof this.navInfo, closeMenu = false) {
-    event.preventDefault();
-    this.infoModal.open(this.navInfo[key]);
-
-    if (closeMenu) {
-      this.closeMenu();
-    }
+    this.authService.signOut().then(() => {
+      this.itineraryService.unsubscribeFromTravels();
+      this.closeAllMenus();
+      this.router.navigate(['/']);
+    });
   }
 }
