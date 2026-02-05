@@ -7,6 +7,7 @@ import express, { Request, Response } from 'express';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { environment } from './environments/environment.prod';
+import { SEO_PAGES } from './app/features/seo-page/seo-pages';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -34,11 +35,30 @@ app.use((req, res, next) => {
   }
 });
 
+const getPublicOrigin = (req: Request): string => {
+  if (SITE_URL) {
+    return SITE_URL.replace(/\/+$/, '');
+  }
+
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const proto = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : (forwardedProto || req.protocol);
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const host = Array.isArray(forwardedHost)
+    ? forwardedHost[0]
+    : (forwardedHost || req.get('host'));
+
+  if (!host) return '';
+  return `${proto}://${host}`;
+};
+
 // ===== VARIABLES DE ENTORNO =====
 const GROQ_API_KEY = environment.GROQ_KEY;
 const SUPABASE_URL = environment.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = environment.SUPABASE_KEY;
 const GOOGLE_MAPS_KEY = environment.GOOGLE_MAPS_KEY;
+const SITE_URL = environment.SITE_URL || '';
 
 // ===== INICIALIZAR SUPABASE =====
 const supabase = createClient(SUPABASE_URL || '', SUPABASE_SERVICE_KEY || '');
@@ -953,6 +973,52 @@ app.get('/api/itineraries', async (req: Request, res: Response): Promise<void> =
 // Health check
 app.get('/health', (req: Request, res: Response): void => {
   res.json({ status: 'ok', timestamp: new Date() });
+});
+
+// Robots + Sitemap
+app.get('/robots.txt', (req: Request, res: Response): void => {
+  const origin = getPublicOrigin(req);
+  const lines = [
+    'User-agent: *',
+    'Allow: /',
+    origin ? `Sitemap: ${origin}/sitemap.xml` : 'Sitemap: /sitemap.xml',
+  ];
+  res.type('text/plain').send(lines.join('\n'));
+});
+
+app.get('/sitemap.xml', (req: Request, res: Response): void => {
+  const origin = getPublicOrigin(req) || 'https://flyealo.com';
+  const today = new Date().toISOString().split('T')[0];
+  const urls = [
+    {
+      loc: `${origin}/`,
+      lastmod: today,
+      changefreq: 'weekly',
+      priority: '1.0',
+    },
+    ...SEO_PAGES.map((page) => ({
+      loc: `${origin}/${page.path}`,
+      lastmod: today,
+      changefreq: 'weekly',
+      priority: '0.8',
+    })),
+  ];
+
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls.map((url) => [
+      '  <url>',
+      `    <loc>${url.loc}</loc>`,
+      `    <lastmod>${url.lastmod}</lastmod>`,
+      `    <changefreq>${url.changefreq}</changefreq>`,
+      `    <priority>${url.priority}</priority>`,
+      '  </url>',
+    ].join('\n')),
+    '</urlset>',
+  ].join('\n');
+
+  res.type('application/xml').send(xml);
 });
 
 // ===== ANGULAR SSR - STATIC FILES =====

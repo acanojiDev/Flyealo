@@ -1,0 +1,145 @@
+.seo-hero {
+  padding: 96px 20px 64px;
+  background: radial-gradient(circle at top, #f7f7f7 0%, #ffffff 55%, #f3f4f6 100%);
+}
+
+.seo-hero__container,
+.seo-section__container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.seo-hero__eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #52525b;
+  margin-bottom: 12px;
+}
+
+.seo-hero__title {
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.05;
+  margin: 0 0 16px;
+  color: #0f172a;
+}
+
+.seo-hero__summary {
+  font-size: 18px;
+  color: #374151;
+  max-width: 720px;
+  margin-bottom: 24px;
+}
+
+.seo-hero__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.seo-hero__primary,
+.seo-hero__secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  border: 1px solid #0f172a;
+}
+
+.seo-hero__primary {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.seo-hero__secondary {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.seo-section {
+  padding: 64px 20px;
+}
+
+.seo-section--light {
+  background: #f8fafc;
+}
+
+.seo-section__title {
+  font-size: 26px;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+
+.seo-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.seo-section__card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  color: #1f2937;
+}
+
+.seo-section__steps {
+  display: grid;
+  gap: 12px;
+}
+
+.seo-section__step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.seo-section__step-index {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.seo-section__text {
+  font-size: 16px;
+  color: #334155;
+  max-width: 720px;
+}
+
+.seo-section__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.seo-section__link {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .seo-hero {
+    padding-top: 72px;
+  }
+
+  .seo-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

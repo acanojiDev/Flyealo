@@ -13,7 +13,14 @@
           placeholder="Añade una ciudad o lugar..."
           (keydown)="onKeyDown($event)"
         />
-        <button type="button" class="travel-form__button" (click)="addDestination()">+</button>
+        <button
+          type="button"
+          class="travel-form__button"
+          (click)="addDestination()"
+          [disabled]="!destination?.value?.trim()"
+        >
+          +
+        </button>
       </div>
 
       <div class="travel-form__destinations">

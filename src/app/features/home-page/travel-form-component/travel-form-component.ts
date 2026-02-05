@@ -56,12 +56,15 @@ export class TravelFormComponent {
 
   addDestination(): void {
     const destControl = this.travelForm.get('destinationInput')!;
-    if (destControl.valid && !this.cities.value.includes(destControl.value)) {
-      this.cities.push(new FormControl(destControl.value));
+    const value = (destControl.value ?? '').trim();
+
+    if (value && !this.cities.value.includes(value)) {
+      this.cities.push(new FormControl(value));
       destControl.setValue('');
       destControl.markAsPristine();
     }
   }
+
 
   removeDestination(index: number): void {
     this.cities.removeAt(index);

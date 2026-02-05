@@ -1,6 +1,13 @@
 import { Routes } from '@angular/router';
 import { authenticatedGuard } from './core/guards/authenticatedGuard';
 import { guestGuard } from './core/guards/guestGuard';
+import { SEO_PAGES } from './features/seo-page/seo-pages';
+
+const seoRoutes: Routes = SEO_PAGES.map((page) => ({
+  path: page.path,
+  loadComponent: () => import('./features/seo-page/seo-page').then(m => m.SeoPage),
+  data: { seo: page },
+}));
 
 export const routes: Routes = [
   {
@@ -8,6 +15,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/landing-page/landing-page').then(m => m.LandingPage),
     canActivate: [guestGuard()],
   },
+  ...seoRoutes,
   {
     path: 'generate-itinerary',
     loadComponent: () => import('./features/home-page/home-page').then(m => m.HomePage),

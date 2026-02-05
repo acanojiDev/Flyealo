@@ -1,0 +1,58 @@
+<section class="seo-hero">
+  <div class="seo-hero__container">
+    <p class="seo-hero__eyebrow">{{ ui.eyebrow }}</p>
+    <h1 class="seo-hero__title">{{ page?.keyword }}</h1>
+    <p class="seo-hero__summary">{{ page?.summary }}</p>
+    <div class="seo-hero__actions">
+      <a class="seo-hero__primary" routerLink="/generate-itinerary">{{ ui.primaryCta }}</a>
+      <a class="seo-hero__secondary" routerLink="/">{{ ui.secondaryCta }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="seo-section">
+  <div class="seo-section__container">
+    <h2 class="seo-section__title">{{ ui.whyTitle }}</h2>
+    <div class="seo-section__grid">
+      @for (item of page?.bullets ?? []; track $index) {
+        <div class="seo-section__card">
+          <p>{{ item }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="seo-section seo-section--light">
+  <div class="seo-section__container">
+    <h2 class="seo-section__title">{{ ui.howTitle }}</h2>
+    <div class="seo-section__steps">
+      @for (step of ui.steps; track $index) {
+        <div class="seo-section__step">
+          <span class="seo-section__step-index">{{ $index + 1 }}</span>
+          <span>{{ step }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="seo-section">
+  <div class="seo-section__container">
+    <h2 class="seo-section__title">{{ ui.europeTitle }}</h2>
+    <p class="seo-section__text">{{ ui.europeBody }}</p>
+  </div>
+</section>
+
+<section class="seo-section seo-section--light">
+  <div class="seo-section__container">
+    <h2 class="seo-section__title">{{ ui.relatedTitle }}</h2>
+    <div class="seo-section__links">
+      @for (item of relatedPages; track item.path) {
+        <a class="seo-section__link" [routerLink]="'/' + item.path">
+          {{ item.metaTitle }}
+        </a>
+      }
+    </div>
+  </div>
+</section>
