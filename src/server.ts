@@ -38,6 +38,7 @@ app.use((req, res, next) => {
 const GROQ_API_KEY = environment.GROQ_KEY;
 const SUPABASE_URL = environment.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = environment.SUPABASE_KEY;
+const GOOGLE_MAPS_KEY = environment.GOOGLE_MAPS_KEY;
 
 // ===== INICIALIZAR SUPABASE =====
 const supabase = createClient(SUPABASE_URL || '', SUPABASE_SERVICE_KEY || '');
@@ -135,10 +136,24 @@ RECIBIRÁS datos en este formato:
 - Los nombres de lugares (place.name) deben ser EXACTOS como en Google Maps`;
 
 
+const MAX_CITY_RADIUS_KM = 50;
+const STRICT_PLACE_VALIDATION = true;
+const DETAILS_CANDIDATE_LIMIT = 5;
+const STREET_TYPES = new Set(['route', 'street_address', 'intersection', 'plus_code']);
+
 // ===== FUNCIONES HELPER =====
 
 // Cache para coordenadas de ciudades (evita llamadas repetidas)
-const cityCoordinatesCache: Map<string, { lng: number; lat: number; country?: string } | null> = new Map();
+type CityGeo = {
+  lng: number;
+  lat: number;
+  bbox?: [number, number, number, number];
+  text?: string;
+  placeName?: string;
+  countryCode?: string;
+};
+
+const cityCoordinatesCache: Map<string, CityGeo | null> = new Map();
 
 /**
  * Mapeo de ciudades conocidas para evitar ambigüedades
@@ -172,10 +187,260 @@ const CITY_ALIASES: Record<string, string> = {
   'singapur': 'Singapore',
 };
 
+const GOOGLE_TYPE_MAP: Record<string, string> = {
+  'museo': 'museum',
+  'monumento': 'tourist_attraction',
+  'restaurante': 'restaurant',
+  'parque': 'park',
+  'iglesia': 'church',
+};
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildCityVariants(value: string): string[] {
+  const normalized = normalizeText(value);
+  const variants = new Set<string>();
+  variants.add(normalized);
+  const alias = CITY_ALIASES[normalized];
+  if (alias) {
+    variants.add(normalizeText(alias));
+  }
+  return Array.from(variants);
+}
+
+function resolveDayCity(dayCity: string | undefined, cities: string[]): string {
+  if (!cities || cities.length === 0) return dayCity || '';
+  if (!dayCity) return cities[0];
+
+  const dayVariants = buildCityVariants(dayCity);
+  for (let i = 0; i < cities.length; i++) {
+    const cityVariants = buildCityVariants(cities[i]);
+    const matches = dayVariants.some((d) => cityVariants.some((c) => d === c || d.includes(c) || c.includes(d)));
+    if (matches) return cities[i];
+  }
+
+  return cities[0];
+}
+
+function mapPlaceType(type?: string): string | undefined {
+  if (!type) return undefined;
+  const normalized = normalizeText(type);
+  return GOOGLE_TYPE_MAP[normalized];
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function buildRadiusBbox(lat: number, lng: number, radiusKm: number): [number, number, number, number] {
+  const latDelta = radiusKm / 111;
+  const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180) || 1);
+  return [lng - lngDelta, lat - latDelta, lng + lngDelta, lat + latDelta];
+}
+
+function extractCityComponentStrings(components: any[]): string[] {
+  if (!Array.isArray(components)) return [];
+  const cityTypes = new Set([
+    'locality',
+    'postal_town',
+    'sublocality',
+    'sublocality_level_1',
+    'sublocality_level_2',
+    'sublocality_level_3',
+    'sublocality_level_4',
+    'sublocality_level_5',
+    'neighborhood',
+    'administrative_area_level_2',
+    'administrative_area_level_3',
+  ]);
+  const values: string[] = [];
+  for (const comp of components) {
+    if (!comp || !Array.isArray(comp.types)) continue;
+    if (comp.types.some((t: string) => cityTypes.has(t))) {
+      if (comp.long_name) values.push(normalizeText(comp.long_name));
+      if (comp.short_name) values.push(normalizeText(comp.short_name));
+    }
+  }
+  return values;
+}
+
+function isWithinBbox(lat: number, lng: number, bbox?: [number, number, number, number]): boolean {
+  if (!bbox) return true;
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+}
+
+function isStreetLike(types: any[]): boolean {
+  return Array.isArray(types) && types.some((t) => STREET_TYPES.has(t));
+}
+
+function getTypeScore(types: any[]): number {
+  if (!Array.isArray(types)) return 0;
+  let score = 0;
+  if (types.some((t) => ['tourist_attraction', 'museum', 'park', 'art_gallery', 'place_of_worship', 'church', 'aquarium', 'zoo', 'amusement_park', 'stadium', 'natural_feature'].includes(t))) {
+    score += 2;
+  }
+  if (types.some((t) => ['point_of_interest', 'establishment'].includes(t))) {
+    score += 1;
+  }
+  if (types.some((t) => ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery', 'food'].includes(t))) {
+    score += 1;
+  }
+  return score;
+}
+
+function isFeatureInCity(feature: any, cityNames: string[]): boolean {
+  const tokens = cityNames.map(normalizeText).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const haystacks: string[] = [];
+  if (feature?.place_name) haystacks.push(normalizeText(feature.place_name));
+  if (feature?.formatted_address) haystacks.push(normalizeText(feature.formatted_address));
+  if (feature?.address_components) haystacks.push(...extractCityComponentStrings(feature.address_components));
+  if (feature?.vicinity) haystacks.push(normalizeText(feature.vicinity));
+  if (feature?.text) haystacks.push(normalizeText(feature.text));
+  if (feature?.name) haystacks.push(normalizeText(feature.name));
+  if (Array.isArray(feature?.context)) {
+    for (const ctx of feature.context) {
+      if (ctx?.text) haystacks.push(normalizeText(ctx.text));
+    }
+  }
+
+  return tokens.some((token) => haystacks.some((hay) => hay.includes(token)));
+}
+
+function isNameMatch(query: string, feature: any): boolean {
+  const q = normalizeText(query);
+  const t = normalizeText(feature?.text || feature?.name || '');
+  if (!q || !t) return false;
+  return q === t || q.includes(t) || t.includes(q);
+}
+
+function getRelevanceScore(feature: any): number {
+  if (typeof feature?.relevance === 'number') return feature.relevance;
+  const rating = typeof feature?.rating === 'number' ? feature.rating : 0;
+  const total = typeof feature?.user_ratings_total === 'number' ? feature.user_ratings_total : 0;
+  return rating * Math.log10(total + 1);
+}
+
+function getAddressComponent(components: any[], type: string): string | undefined {
+  if (!Array.isArray(components)) return undefined;
+  const match = components.find((c) => Array.isArray(c.types) && c.types.includes(type));
+  return match?.long_name;
+}
+
+function getCountryCode(components: any[]): string | undefined {
+  if (!Array.isArray(components)) return undefined;
+  const match = components.find((c) => Array.isArray(c.types) && c.types.includes('country'));
+  return match?.short_name?.toLowerCase();
+}
+
+async function fetchPlaceDetails(placeId: string): Promise<any | null> {
+  if (!GOOGLE_MAPS_KEY) return null;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json` +
+    `?place_id=${encodeURIComponent(placeId)}` +
+    `&fields=place_id,name,formatted_address,geometry,address_component,types,rating,user_ratings_total` +
+    `&key=${GOOGLE_MAPS_KEY}` +
+    `&language=es`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.error(`Google Place Details HTTP ${response.status} → ${placeId}`);
+    return null;
+  }
+  const data = await response.json();
+  if (data.status && data.status !== 'OK') {
+    console.error(`Google Place Details status ${data.status} → ${placeId} ${data.error_message || ''}`.trim());
+    return null;
+  }
+  return data.result || null;
+}
+
+async function fetchFindPlaceCandidates(query: string, cityGeo: CityGeo | null): Promise<any[]> {
+  if (!GOOGLE_MAPS_KEY) return [];
+
+  let url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+    `?input=${encodeURIComponent(query)}` +
+    `&inputtype=textquery` +
+    `&fields=place_id,name,formatted_address,geometry,types,rating,user_ratings_total` +
+    `&key=${GOOGLE_MAPS_KEY}` +
+    `&language=es`;
+
+  if (cityGeo?.lat != null && cityGeo?.lng != null) {
+    url += `&locationbias=circle:${MAX_CITY_RADIUS_KM * 1000}@${cityGeo.lat},${cityGeo.lng}`;
+  }
+  if (cityGeo?.countryCode) {
+    url += `&region=${cityGeo.countryCode}`;
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.error(`Google FindPlace HTTP ${response.status} → ${query}`);
+    return [];
+  }
+  const data = await response.json();
+  if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+    console.error(`Google FindPlace status ${data.status} → ${query} ${data.error_message || ''}`.trim());
+    return [];
+  }
+  return Array.isArray(data.candidates) ? data.candidates : [];
+}
+
+async function fetchTextSearchResults(query: string, cityGeo: CityGeo | null, placeType?: string): Promise<any[]> {
+  if (!GOOGLE_MAPS_KEY) return [];
+
+  let url = `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+    `?query=${encodeURIComponent(query)}` +
+    `&key=${GOOGLE_MAPS_KEY}` +
+    `&language=es`;
+
+  if (cityGeo?.lat != null && cityGeo?.lng != null) {
+    url += `&location=${cityGeo.lat},${cityGeo.lng}`;
+    url += `&radius=${MAX_CITY_RADIUS_KM * 1000}`;
+  }
+  if (cityGeo?.countryCode) {
+    url += `&region=${cityGeo.countryCode}`;
+  }
+
+  const mappedType = mapPlaceType(placeType);
+  if (mappedType) {
+    url += `&type=${mappedType}`;
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.error(`Google TextSearch HTTP ${response.status} → ${query}`);
+    return [];
+  }
+
+  const data = await response.json();
+  if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+    console.error(`Google TextSearch status ${data.status} → ${query} ${data.error_message || ''}`.trim());
+    return [];
+  }
+  return Array.isArray(data.results) ? data.results : [];
+}
+
 /**
- * Obtiene las coordenadas del centro de una ciudad usando Mapbox
+ * Obtiene las coordenadas del centro de una ciudad usando Google Geocoding
  */
-async function getCityCoordinates(city: string): Promise<{ lng: number; lat: number } | null> {
+async function getCityCoordinates(city: string): Promise<CityGeo | null> {
   const cacheKey = city.toLowerCase().trim();
 
   // Revisar cache primero
@@ -187,38 +452,63 @@ async function getCityCoordinates(city: string): Promise<{ lng: number; lat: num
   const searchCity = CITY_ALIASES[cacheKey] || city;
 
   try {
+    if (!GOOGLE_MAPS_KEY) {
+      console.error('GOOGLE_MAPS_KEY no configurado');
+      cityCoordinatesCache.set(cacheKey, null);
+      return null;
+    }
+
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchCity)}.json` +
-      `?access_token=${environment.MAP_KEY}` +
-      `&types=place,locality,region` +
-      `&limit=5` // Obtener varios para elegir el mejor
+      `https://maps.googleapis.com/maps/api/geocode/json` +
+      `?address=${encodeURIComponent(searchCity)}` +
+      `&key=${GOOGLE_MAPS_KEY}`
     );
 
     if (!response.ok) {
-      console.error(`Mapbox HTTP ${response.status} geocoding city: ${city}`);
+      console.error(`Google Geocoding HTTP ${response.status} geocoding city: ${city}`);
       cityCoordinatesCache.set(cacheKey, null);
       return null;
     }
 
     const data = await response.json();
 
-    if (!data.features || data.features.length === 0) {
-      console.log(`⚠️ Ciudad no encontrada: ${city}`);
+    if (!data.results || data.results.length === 0) {
+      console.log(`Ciudad no encontrada: ${city}`);
       cityCoordinatesCache.set(cacheKey, null);
       return null;
     }
 
-    // Elegir el resultado con mayor relevancia (ciudades grandes tienen más relevancia)
-    const bestResult = data.features.reduce((best: any, current: any) => {
-      return (current.relevance > best.relevance) ? current : best;
-    }, data.features[0]);
+    // Preferir resultados de tipo "locality" (ciudad)
+    const bestResult =
+      data.results.find((r: any) => Array.isArray(r.types) && r.types.includes('locality')) ||
+      data.results[0];
 
-    const coords = {
-      lng: bestResult.center[0],
-      lat: bestResult.center[1]
+    const geometry = bestResult.geometry || {};
+    const location = geometry.location || {};
+    if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+      console.log(`Ciudad sin coordenadas válidas: ${city}`);
+      cityCoordinatesCache.set(cacheKey, null);
+      return null;
+    }
+    const bounds = geometry.bounds || geometry.viewport;
+    const bbox = bounds
+      ? [bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lng, bounds.northeast.lat] as [number, number, number, number]
+      : buildRadiusBbox(location.lat, location.lng, MAX_CITY_RADIUS_KM);
+
+    const coords: CityGeo = {
+      lng: location.lng,
+      lat: location.lat,
+      bbox,
+      text:
+        getAddressComponent(bestResult.address_components, 'locality') ||
+        getAddressComponent(bestResult.address_components, 'postal_town') ||
+        getAddressComponent(bestResult.address_components, 'administrative_area_level_1') ||
+        bestResult.formatted_address,
+      placeName: bestResult.formatted_address,
+      countryCode: getCountryCode(bestResult.address_components)
     };
 
-    console.log(`📍 Ciudad geocodificada: ${city} → ${bestResult.place_name} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+    console.log(`📍 Ciudad geocodificada (Google): ${city} → ${coords.placeName} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
     cityCoordinatesCache.set(cacheKey, coords);
     return coords;
 
@@ -230,57 +520,147 @@ async function getCityCoordinates(city: string): Promise<{ lng: number; lat: num
 }
 
 /**
- * Busca un lugar en Mapbox con precisión mejorada usando proximity
+ * Busca un lugar en Google Places con precisión mejorada usando location+radius
  */
-async function enrichPlaceWithMapbox(
+async function enrichPlaceWithGoogle(
   placeName: string,
-  city: string
+  city: string,
+  placeType?: string
 ): Promise<any> {
   try {
     // Paso 1: Obtener coordenadas del centro de la ciudad
-    const cityCoords = await getCityCoordinates(city);
+    const cityGeo = await getCityCoordinates(city);
 
-    const query = `${placeName}, ${city}`;
+    const canonicalCity = cityGeo?.text || city;
+    const query = `${placeName}, ${canonicalCity}`;
 
-    // Paso 2: Construir URL con parámetros de precisión
-    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
-      `?access_token=${environment.MAP_KEY}` +
-      `&limit=1` +
-      `&language=es,en` +
-      `&types=poi,address,place`; // Solo POIs y direcciones
-
-    // Si tenemos coordenadas de la ciudad, añadir proximity
-    if (cityCoords) {
-      url += `&proximity=${cityCoords.lng},${cityCoords.lat}`;
-    }
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      console.error(`Mapbox HTTP ${response.status} → ${placeName}`);
+    if (!GOOGLE_MAPS_KEY) {
+      console.error('GOOGLE_MAPS_KEY no configurado');
       return null;
     }
 
-    const data = await response.json();
+    const findResults = await fetchFindPlaceCandidates(query, cityGeo);
+    let results = findResults;
+    let usedFindPlace = results.length > 0;
 
-    if (!data.features || data.features.length === 0) {
-      console.log(`❌ No encontrado en Mapbox: ${placeName}`);
+    if (!usedFindPlace) {
+      results = await fetchTextSearchResults(query, cityGeo, placeType);
+    }
+
+    if (results.length === 0) {
+      console.log(`No encontrado en Google Places: ${placeName}`);
       return null;
     }
 
-    const feature = data.features[0];
+    const cityNames = [canonicalCity, city, cityGeo?.placeName].filter(Boolean) as string[];
+
+    const buildPool = (items: any[]) => {
+      const candidates = items
+        .map((feature: any) => {
+          const location = feature?.geometry?.location;
+          if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+            return null;
+          }
+
+          const types = Array.isArray(feature?.types) ? feature.types : [];
+          if (isStreetLike(types)) {
+            return null;
+          }
+
+          const distanceKm = cityGeo
+            ? haversineKm(cityGeo.lat, cityGeo.lng, location.lat, location.lng)
+            : null;
+
+          if (distanceKm != null && distanceKm > MAX_CITY_RADIUS_KM) {
+            return null;
+          }
+
+          return { feature, distanceKm };
+        })
+        .filter(Boolean) as { feature: any; distanceKm: number | null }[];
+
+      const strictCandidates = candidates.filter((c) => isFeatureInCity(c.feature, cityNames));
+      const pool = strictCandidates.length > 0 ? strictCandidates : candidates;
+      return pool;
+    };
+
+    let pool = buildPool(results);
+
+    if (pool.length === 0 && usedFindPlace) {
+      const textResults = await fetchTextSearchResults(query, cityGeo, placeType);
+      pool = buildPool(textResults);
+      usedFindPlace = false;
+    }
+
+    if (pool.length === 0) {
+      console.log(`No encontrado en Google Places (filtrado por ciudad): ${placeName}`);
+      return null;
+    }
+
+    const detailsCandidates: { feature: any; distanceKm: number | null }[] = [];
+    for (const candidate of pool.slice(0, DETAILS_CANDIDATE_LIMIT)) {
+      const placeId = candidate.feature?.place_id;
+      if (!placeId) continue;
+      const details = await fetchPlaceDetails(placeId);
+      if (!details) continue;
+
+      const location = details?.geometry?.location;
+      if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') continue;
+
+      if (isStreetLike(details?.types)) continue;
+
+      const distanceKm = cityGeo
+        ? haversineKm(cityGeo.lat, cityGeo.lng, location.lat, location.lng)
+        : null;
+
+      if (distanceKm != null && distanceKm > MAX_CITY_RADIUS_KM) continue;
+      if (cityGeo?.bbox && !isWithinBbox(location.lat, location.lng, cityGeo.bbox)) continue;
+      if (!isFeatureInCity(details, cityNames)) continue;
+      if (STRICT_PLACE_VALIDATION && !isNameMatch(placeName, details)) continue;
+
+      detailsCandidates.push({ feature: details, distanceKm });
+    }
+
+    const finalPool = detailsCandidates.length > 0 ? detailsCandidates : (STRICT_PLACE_VALIDATION ? [] : pool);
+
+    if (finalPool.length === 0) {
+      console.log(`No encontrado en Google Places (validación estricta): ${placeName}`);
+      return null;
+    }
+
+    finalPool.sort((a, b) => {
+      const aMatch = isNameMatch(placeName, a.feature);
+      const bMatch = isNameMatch(placeName, b.feature);
+      if (aMatch !== bMatch) return aMatch ? -1 : 1;
+
+      const aType = getTypeScore(a.feature?.types);
+      const bType = getTypeScore(b.feature?.types);
+      if (bType !== aType) return bType - aType;
+
+      const aRel = getRelevanceScore(a.feature);
+      const bRel = getRelevanceScore(b.feature);
+      if (bRel !== aRel) return bRel - aRel;
+
+      if (a.distanceKm != null && b.distanceKm != null) {
+        return a.distanceKm - b.distanceKm;
+      }
+      return 0;
+    });
+
+    const feature = finalPool[0].feature;
+    const featureLocation = feature.geometry?.location;
 
     return {
-      address: feature.place_name,
+      address: feature.formatted_address || feature.name,
       coordinates: {
-        lat: feature.center[1],
-        lng: feature.center[0],
+        lat: featureLocation.lat,
+        lng: featureLocation.lng,
       },
-      relevance: feature.relevance,
+      relevance: getRelevanceScore(feature),
     };
 
   } catch (error) {
-    console.error(`Error buscando en Mapbox: ${placeName}`, error);
+    console.error(`Error buscando en Google Places: ${placeName}`, error);
     return null;
   }
 }
@@ -347,27 +727,31 @@ Por favor, genera un itinerario detallado. Recuerda:
 }
 
 /**
- * Enriquece itinerario con coordenadas de Nominatim
+ * Enriquece itinerario con coordenadas de Google Places
  */
 async function enrichItineraryWithCoordinates(itinerary: any, cities: string[]): Promise<any> {
   let enrichedCount = 0;
   let notFoundCount = 0;
 
   for (const day of itinerary.days) {
-    const cityName = day.city || cities[0];
+    const cityName = resolveDayCity(day.city, cities);
+    if (day.city !== cityName) {
+      day.city = cityName;
+    }
 
     for (const place of day.places) {
-      const mapboxData = await enrichPlaceWithMapbox(
+      const placeData = await enrichPlaceWithGoogle(
         place.name,
-        cityName
+        cityName,
+        place.type
       );
 
-      if (mapboxData) {
-        place.address = mapboxData.address;
-        place.coordinates = mapboxData.coordinates;
+      if (placeData) {
+        place.address = placeData.address;
+        place.coordinates = placeData.coordinates;
         enrichedCount++;
       } else {
-        place.address = `${place.name}, ${cityName} (no encontrado en Mapbox)`;
+        place.address = `${place.name}, ${cityName} (no encontrado en Google Places)`;
         place.coordinates = { lat: 0, lng: 0 };
         place.address_status = 'not_found';
         notFoundCount++;

@@ -1,16 +1,16 @@
 <header class="header">
   <div class="header__container">
-    <div class="header__brand" routerLink="">
+    <div class="header__brand">
       <img width="150px" src="flyealo.ico">
     </div>
 
     <!-- Desktop Navigation - Only shown when user is NOT authenticated -->
     @if (!isAuthenticated()) {
       <nav class="header__nav">
-        <a class="header__link">Destinations</a>
-        <a class="header__link">How it works</a>
-        <a class="header__link">Features</a>
-        <a class="header__link">Pricing</a>
+        <a class="header__link" href="#" (click)="openNavInfo($event, 'destinations')">Destinations</a>
+        <a class="header__link" href="#" (click)="openNavInfo($event, 'howItWorks')">How it works</a>
+        <a class="header__link" href="#" (click)="openNavInfo($event, 'features')">Features</a>
+        <a class="header__link" href="#" (click)="openNavInfo($event, 'pricing')">Pricing</a>
       </nav>
     }
 
@@ -59,10 +59,10 @@
   @if (!isAuthenticated()) {
     <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
       <nav class="header__mobile-nav">
-        <a class="header__mobile-link" (click)="toggleMenu()">Destinations</a>
-        <a class="header__mobile-link" (click)="toggleMenu()">How it works</a>
-        <a class="header__mobile-link" (click)="toggleMenu()">Features</a>
-        <a class="header__mobile-link" (click)="toggleMenu()">Pricing</a>
+        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'destinations', true)">Destinations</a>
+        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'howItWorks', true)">How it works</a>
+        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'features', true)">Features</a>
+        <a class="header__mobile-link" href="#" (click)="openNavInfo($event, 'pricing', true)">Pricing</a>
 
         <div class="header__mobile-actions">
           <button class="header__mobile-link" (click)="loginClick.emit(); toggleMenu()">
@@ -113,7 +113,7 @@
     <div class="header__sidebar" [class.header__sidebar--open]="isSidebarOpen()">
       <div class="header__sidebar-header">
         <h2>My Itineraries</h2>
-        <button class="header__sidebar-close" (click)="toggleSidebar()">×</button>
+        <button class="header__sidebar-close" (click)="toggleSidebar()">&times;</button>
       </div>
 
       <div class="header__sidebar-content">

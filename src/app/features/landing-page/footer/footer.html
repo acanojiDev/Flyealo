@@ -13,23 +13,23 @@
       <nav class="footer__nav">
         <div class="footer__column">
           <span class="footer__title">Product</span>
-          <a href="#" class="footer__link">How it works</a>
-          <a href="#" class="footer__link">Destinations</a>
-          <a href="#" class="footer__link">Pricing</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'howItWorks')">How it works</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'destinations')">Destinations</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'pricing')">Pricing</a>
         </div>
 
         <div class="footer__column">
           <span class="footer__title">Company</span>
-          <a href="#" class="footer__link">About</a>
-          <a href="#" class="footer__link">Careers</a>
-          <a href="#" class="footer__link">Contact</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'about')">About</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'careers')">Careers</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'contact')">Contact</a>
         </div>
 
         <div class="footer__column">
           <span class="footer__title">Legal</span>
-          <a href="#" class="footer__link">Privacy policy</a>
-          <a href="#" class="footer__link">Terms of service</a>
-          <a href="#" class="footer__link">Cookies</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'privacy')">Privacy policy</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'terms')">Terms of service</a>
+          <a href="#" class="footer__link" (click)="openFooterInfo($event, 'cookies')">Cookies</a>
         </div>
       </nav>
     </div>
@@ -39,12 +39,12 @@
 
     <!-- Bottom -->
     <div class="footer__bottom">
-      <span class="footer__copyright"> © 2026 Flyealo. All rights reserved. </span>
+      <span class="footer__copyright"> &copy; 2026 Flyealo. All rights reserved. </span>
 
       <div class="footer__social">
-        <a href="#" class="footer__social-link">Twitter</a>
-        <a href="#" class="footer__social-link">Instagram</a>
-        <a href="#" class="footer__social-link">LinkedIn</a>
+        <a href="#" class="footer__social-link" (click)="openFooterInfo($event, 'twitter')">Twitter</a>
+        <a href="#" class="footer__social-link" (click)="openFooterInfo($event, 'instagram')">Instagram</a>
+        <a href="#" class="footer__social-link" (click)="openFooterInfo($event, 'linkedin')">LinkedIn</a>
       </div>
     </div>
   </div>

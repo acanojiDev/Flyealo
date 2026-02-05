@@ -19,6 +19,16 @@ export class HomePage {
   isLoading = this.itineraryService.isLoading;
   error = this.itineraryService.error;
 
+  welcomeName(): string {
+    const name = this.user?.user_metadata?.['full_name'];
+    if (!!name && (name.trim().split(/\s+/).length > 3)) {
+      const words = name.trim().split(/\s+/).slice(0, 4);
+      return `${words[0]} ${words[1]}\n${words[2]} ${words[3]}`;
+    } else {
+      return name;
+    }
+  }
+
   submitForm(event: any) {
     this.itineraryService.createItinerary(event).subscribe({
       next: (data: Travel) => {

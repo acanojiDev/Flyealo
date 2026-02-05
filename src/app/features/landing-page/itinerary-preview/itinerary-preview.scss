@@ -1,6 +1,7 @@
 .itinerary {
   padding: 6rem 2rem;
   transition: background-color 0.3s ease;
+  scroll-margin-top: 96px;
 
   &__container {
     position: relative;
@@ -22,6 +23,18 @@
     text-align: left;
     z-index: 2;
     border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 44px rgba(0, 0, 0, 0.12);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 4px;
+    }
 
     @media (max-width: 1100px) {
        position: static;
@@ -177,6 +190,11 @@
 
     &:hover {
       background: var(--color-background-soft);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 4px;
     }
   }
 

@@ -10,7 +10,14 @@
 
   <div class="destinations__grid">
     <!-- Tokyo -->
-    <article class="destination-card destination-card--large">
+    <article
+      class="destination-card destination-card--large"
+      role="button"
+      tabindex="0"
+      (click)="openDestination('tokyo')"
+      (keydown.enter)="openDestination('tokyo')"
+      (keydown.space)="openDestination('tokyo')"
+    >
       <img src="img/tokyo.jpg" alt="Tokyo" class="destination-card__image" />
 
       <span class="destination-card__badge">Most Popular</span>
@@ -22,7 +29,14 @@
     </article>
 
     <!-- Santorini -->
-    <article class="destination-card destination-card--small">
+    <article
+      class="destination-card destination-card--small"
+      role="button"
+      tabindex="0"
+      (click)="openDestination('santorini')"
+      (keydown.enter)="openDestination('santorini')"
+      (keydown.space)="openDestination('santorini')"
+    >
       <img src="img/alpes-suizos.jpeg" alt="Santorini" class="destination-card__image" />
 
       <div class="destination-card__content destination-card__content--overlay">
@@ -32,7 +46,14 @@
     </article>
 
     <!-- Bali -->
-    <article class="destination-card destination-card--small">
+    <article
+      class="destination-card destination-card--small"
+      role="button"
+      tabindex="0"
+      (click)="openDestination('bali')"
+      (keydown.enter)="openDestination('bali')"
+      (keydown.space)="openDestination('bali')"
+    >
       <img src="/img/indonesia.jpg" alt="Bali" class="destination-card__image" />
 
       <div class="destination-card__content destination-card__content--overlay">
@@ -42,15 +63,26 @@
     </article>
 
     <!-- Marrakech -->
-    <article class="destination-card destination-card--wide">
+    <article
+      class="destination-card destination-card--wide"
+      role="button"
+      tabindex="0"
+      (click)="openDestination('marrakech')"
+      (keydown.enter)="openDestination('marrakech')"
+      (keydown.space)="openDestination('marrakech')"
+    >
       <img src="img/marruecos.jpg" alt="Marrakech" class="destination-card__image" />
 
       <div class="destination-card__content">
         <h3 class="destination-card__title">Marrakech, Morocco</h3>
         <p class="destination-card__meta">7,654 itineraries</p>
 
-        <button class="destination-card__button" routerLink="/generate-itinerary">
-          Create rout itinerary
+        <button
+          class="destination-card__button"
+          type="button"
+          (click)="openRegister($event)"
+        >
+          Create your itinerary
         </button>
       </div>
     </article>

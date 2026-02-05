@@ -1,0 +1,40 @@
+<dialog
+  #infoDialog
+  class="info-dialog"
+  (cancel)="handleCancel($event)"
+  (click)="handleBackdropClick($event)"
+  (close)="handleDialogClose()"
+>
+  <div class="info-dialog__content">
+    <button
+      type="button"
+      class="info-dialog__close"
+      aria-label="Close"
+      (click)="close()"
+    >
+      &times;
+    </button>
+
+    @if (info().tag) {
+      <span class="info-dialog__tag">{{ info().tag }}</span>
+    }
+
+    <h3 class="info-dialog__title">{{ info().title }}</h3>
+
+    @if (info().subtitle) {
+      <p class="info-dialog__subtitle">{{ info().subtitle }}</p>
+    }
+
+    @if (info().description) {
+      <p class="info-dialog__description">{{ info().description }}</p>
+    }
+
+    @if ((info().items?.length ?? 0) > 0) {
+      <ul class="info-dialog__list">
+        @for (item of (info().items ?? []); track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+    }
+  </div>
+</dialog>

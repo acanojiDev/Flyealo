@@ -1,4 +1,4 @@
-<section class="how">
+<section class="how" id="how">
   <div class="how__container">
     <!-- Header -->
     <header class="how__header">
@@ -14,7 +14,14 @@
 
     <!-- Steps -->
     <div class="how__steps">
-      <article class="step-card">
+      <article
+        class="step-card"
+        role="button"
+        tabindex="0"
+        (click)="openStep('step1')"
+        (keydown.enter)="openStep('step1')"
+        (keydown.space)="openStep('step1')"
+      >
         <div class="step-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="black">
             <path
@@ -34,7 +41,14 @@
         </p>
       </article>
 
-      <article class="step-card">
+      <article
+        class="step-card"
+        role="button"
+        tabindex="0"
+        (click)="openStep('step2')"
+        (keydown.enter)="openStep('step2')"
+        (keydown.space)="openStep('step2')"
+      >
         <div class="step-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black">
             <path
@@ -53,7 +67,14 @@
         </p>
       </article>
 
-      <article class="step-card">
+      <article
+        class="step-card"
+        role="button"
+        tabindex="0"
+        (click)="openStep('step3')"
+        (keydown.enter)="openStep('step3')"
+        (keydown.space)="openStep('step3')"
+      >
         <div class="step-card__icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -76,7 +97,14 @@
         </p>
       </article>
 
-      <article class="step-card">
+      <article
+        class="step-card"
+        role="button"
+        tabindex="0"
+        (click)="openStep('step4')"
+        (keydown.enter)="openStep('step4')"
+        (keydown.space)="openStep('step4')"
+      >
         <div class="step-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black">
             <path
@@ -106,7 +134,12 @@
       </div>
 
       <div class="how__cta-actions">
-        <button class="button button--primary">Start planning now</button>
+        <button class="button button--primary" type="button" (click)="openRegister()">
+          Start for free
+        </button>
+        <a class="button button--secondary" href="#itinerary">
+          View sample itinerary
+        </a>
       </div>
     </div>
   </div>

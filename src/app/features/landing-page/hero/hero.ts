@@ -1,6 +1,6 @@
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { Header } from "../../../shared/components/header/header";
-import { RouterLink } from "@angular/router";
+import { AuthDialogService } from '../../../core/services/auth-dialog';
 
 @Component({
   selector: 'app-hero',
@@ -9,16 +9,12 @@ import { RouterLink } from "@angular/router";
   styleUrl: './hero.scss',
 })
 export class Hero {
-  isMenuOpen = false;
+  private authDialogs = inject(AuthDialogService);
 
   loginClick = output();
   registerClick = output();
 
-  toggleMenu() {
-    this.isMenuOpen = !this.isMenuOpen;
-  }
-
-  closeMenu() {
-    this.isMenuOpen = false;
+  openRegister() {
+    this.authDialogs.openRegister();
   }
 }

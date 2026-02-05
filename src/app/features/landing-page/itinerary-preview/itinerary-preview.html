@@ -1,12 +1,26 @@
-<section class="itinerary">
+<section class="itinerary" id="itinerary">
   <div class="itinerary__container">
     <!-- Floating stats -->
-    <div class="itinerary__stat itinerary__stat--budget">
+    <div
+      class="itinerary__stat itinerary__stat--budget"
+      role="button"
+      tabindex="0"
+      (click)="openInfo('budget')"
+      (keydown.enter)="openInfo('budget')"
+      (keydown.space)="openInfo('budget')"
+    >
       <span class="itinerary__stat-value">$1,850</span>
       <span class="itinerary__stat-label">Est. budget</span>
     </div>
 
-    <div class="itinerary__stat itinerary__stat--time">
+    <div
+      class="itinerary__stat itinerary__stat--time"
+      role="button"
+      tabindex="0"
+      (click)="openInfo('time')"
+      (keydown.enter)="openInfo('time')"
+      (keydown.space)="openInfo('time')"
+    >
       <span class="itinerary__stat-value">2.5hrs</span>
       <span class="itinerary__stat-label">Research saved</span>
     </div>
@@ -28,31 +42,52 @@
       </div>
 
       <ul class="itinerary__list">
-        <li class="itinerary__item">
+        <li
+          class="itinerary__item"
+          role="button"
+          tabindex="0"
+          (click)="openInfo('day1')"
+          (keydown.enter)="openInfo('day1')"
+          (keydown.space)="openInfo('day1')"
+        >
           <span class="itinerary__day">1</span>
           <div class="itinerary__content">
             <p class="itinerary__item-title">Arrival & Shibuya Exploration</p>
             <p class="itinerary__item-subtitle">4 activities planned</p>
           </div>
-          <span class="itinerary__arrow">→</span>
+          <span class="itinerary__arrow">&rarr;</span>
         </li>
 
-        <li class="itinerary__item">
+        <li
+          class="itinerary__item"
+          role="button"
+          tabindex="0"
+          (click)="openInfo('day2')"
+          (keydown.enter)="openInfo('day2')"
+          (keydown.space)="openInfo('day2')"
+        >
           <span class="itinerary__day">2</span>
           <div class="itinerary__content">
             <p class="itinerary__item-title">Traditional Tokyo (Asakusa & Meiji)</p>
             <p class="itinerary__item-subtitle">5 activities planned</p>
           </div>
-          <span class="itinerary__arrow">→</span>
+          <span class="itinerary__arrow">&rarr;</span>
         </li>
 
-        <li class="itinerary__item">
+        <li
+          class="itinerary__item"
+          role="button"
+          tabindex="0"
+          (click)="openInfo('day3')"
+          (keydown.enter)="openInfo('day3')"
+          (keydown.space)="openInfo('day3')"
+        >
           <span class="itinerary__day">3</span>
           <div class="itinerary__content">
             <p class="itinerary__item-title">Modern Tokyo (Akihabara & Harajuku)</p>
             <p class="itinerary__item-subtitle">6 activities planned</p>
           </div>
-          <span class="itinerary__arrow">→</span>
+          <span class="itinerary__arrow">&rarr;</span>
         </li>
       </ul>
     </div>

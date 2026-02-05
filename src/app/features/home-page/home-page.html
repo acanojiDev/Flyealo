@@ -9,7 +9,9 @@
   <main class="home-page__main">
     <div class="home-page__container">
       <div class="home-page__header">
-        <h1 class="home-page__title">¡Hola, {{ user?.user_metadata?.['username'] ?? user?.user_metadata?.['full_name'] }}!</h1>
+        <h1 class="home-page__title" style="white-space: pre-line">
+          ¡Hola, {{ user?.user_metadata?.['username'] ?? welcomeName() }}!
+        </h1>
         <p class="home-page__subtitle">¿A dónde te gustaría ir hoy?</p>
       </div>
 

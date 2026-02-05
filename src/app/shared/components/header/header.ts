@@ -5,10 +5,11 @@ import { Auth } from '../../../core/services/auth';
 import { Itinerary } from '../../../core/services/itinerary';
 import { take } from 'rxjs';
 import { HistoryCard } from "../history-card/history-card";
+import { InfoModalService } from '../../../core/services/info-modal';
 
 @Component({
   selector: 'app-header',
-  imports: [HistoryCard, RouterLink],
+  imports: [HistoryCard],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
@@ -16,6 +17,7 @@ export class Header {
   private authService = inject(Auth);
   private itineraryService = inject(Itinerary);
   private router = inject(Router);
+  private infoModal = inject(InfoModalService);
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
@@ -32,6 +34,49 @@ export class Header {
 
   loginClick = output();
   registerClick = output();
+
+  navInfo = {
+    destinations: {
+      tag: 'Destinations',
+      title: 'Explore top destinations',
+      description: 'AI-curated routes designed around your time, budget, and travel style.',
+      items: [
+        'Seasonal highlights and local gems',
+        'Balanced must-sees and hidden spots',
+        'Offline maps included in itineraries',
+      ],
+    },
+    howItWorks: {
+      tag: 'How it works',
+      title: 'From idea to itinerary',
+      description: 'Share your trip details and get a day-by-day plan in seconds.',
+      items: [
+        'Tell us dates, budget, and interests',
+        'AI assembles a personalized schedule',
+        'Edit, swap, and save anytime',
+      ],
+    },
+    features: {
+      tag: 'Features',
+      title: 'Everything you need to plan smarter',
+      description: 'Flyealo keeps your trip organized from the first idea to the final booking.',
+      items: [
+        'Personalized daily schedules',
+        'Smart budget estimates',
+        'Instant activity swaps',
+      ],
+    },
+    pricing: {
+      tag: 'Pricing',
+      title: 'Simple, flexible plans',
+      description: 'Start with a free week plan and upgrade when you are ready.',
+      items: [
+        'Free trial for your first itinerary',
+        'Flexible monthly subscriptions',
+        'Cancel anytime',
+      ],
+    },
+  };
 
   constructor() {
     if (this.isBrowser) {
@@ -95,5 +140,14 @@ export class Header {
         this.toggleMenu();
         this.router.navigate(['/'])
       });
+  }
+
+  openNavInfo(event: Event, key: keyof typeof this.navInfo, closeMenu = false) {
+    event.preventDefault();
+    this.infoModal.open(this.navInfo[key]);
+
+    if (closeMenu) {
+      this.closeMenu();
+    }
   }
 }

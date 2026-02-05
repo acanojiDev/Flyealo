@@ -179,6 +179,10 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     @media (max-width: 480px) {
       width: 100%;
@@ -201,6 +205,10 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     @media (max-width: 480px) {
       width: 100%;

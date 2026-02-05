@@ -1,4 +1,5 @@
-import { Component, ElementRef, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, effect, inject, PLATFORM_ID, viewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Hero } from './hero/hero';
 import { ItineraryPreview } from './itinerary-preview/itinerary-preview';
 import { PopularDestinations } from './popular-destinations/popular-destinations';
@@ -8,6 +9,7 @@ import { Footer } from './footer/footer';
 import { LoginComponent } from './login-component/login-component';
 import { RegisterComponent } from './register-component/register-component';
 import { Auth } from '../../core/services/auth';
+import { AuthDialogService } from '../../core/services/auth-dialog';
 import { Router } from '@angular/router';
 
 @Component({
@@ -29,7 +31,44 @@ export class LandingPage {
   loginDialog = viewChild<ElementRef<HTMLDialogElement>>('loginDialog');
   registerDialog = viewChild<ElementRef<HTMLDialogElement>>('registerDialog');
   authService = inject(Auth);
+  authDialogs = inject(AuthDialogService);
   router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
+
+  constructor() {
+    if (this.isBrowser) {
+      effect(() => {
+        const dialog = this.loginDialog()?.nativeElement;
+        if (!dialog) {
+          return;
+        }
+
+        if (this.authDialogs.isLoginOpen() && !dialog.open) {
+          dialog.showModal();
+        }
+
+        if (!this.authDialogs.isLoginOpen() && dialog.open) {
+          dialog.close();
+        }
+      });
+
+      effect(() => {
+        const dialog = this.registerDialog()?.nativeElement;
+        if (!dialog) {
+          return;
+        }
+
+        if (this.authDialogs.isRegisterOpen() && !dialog.open) {
+          dialog.showModal();
+        }
+
+        if (!this.authDialogs.isRegisterOpen() && dialog.open) {
+          dialog.close();
+        }
+      });
+    }
+  }
 
   async handleRegister(credentials: { email: string; password: string; username: string }) {
     try {
@@ -78,18 +117,18 @@ export class LandingPage {
   }
 
   openLogin() {
-    this.loginDialog()?.nativeElement.showModal();
+    this.authDialogs.openLogin();
   }
 
   closeLogin() {
-    this.loginDialog()?.nativeElement.close();
+    this.authDialogs.closeLogin();
   }
 
   openRegister() {
-    this.registerDialog()?.nativeElement.showModal();
+    this.authDialogs.openRegister();
   }
 
   closeRegister() {
-    this.registerDialog()?.nativeElement.close();
+    this.authDialogs.closeRegister();
   }
 }

@@ -24,20 +24,13 @@ export class Itinerary {
   travelsLoaded = signal(false);
   selectedDay = signal<string>('1');
 
-  private api = '/api';
+  private api = 'http://localhost:4000/api';
 
   // Use Auth service's client
   private get client(): SupabaseClient {
     return this.auth.supabase;
   }
 
-  /**
-   * Crear itinerario
-   * 1. POST a backend
-   * 2. Backend responde inmediato con ID
-   * 3. Escuchar cambios en BD por WebSocket
-   * 4. Cuando groqStatus = 'completed', emitir resultado
-   */
     createItinerary(data: Partial<Travel>): Observable<Travel> {
     const user = this.auth.currentUser();
     if (!user) {
