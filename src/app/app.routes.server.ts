@@ -11,6 +11,18 @@ export const serverRoutes: ServerRoute[] = [
     path: '',
     renderMode: RenderMode.Server
   },
+  {
+    path: 'legal',
+    renderMode: RenderMode.Server
+  },
+  {
+    path: 'privacy-policy',
+    renderMode: RenderMode.Server
+  },
+  {
+    path: 'terms-and-conditions',
+    renderMode: RenderMode.Server
+  },
   ...seoServerRoutes,
   {
     path: 'generate-itinerary',

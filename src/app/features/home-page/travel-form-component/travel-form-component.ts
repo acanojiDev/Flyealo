@@ -11,15 +11,15 @@ import {
 import { minLengthArray } from '../../../shared/validators/arrayLength.validator';
 
 const SUGGESTED_INTERESTS = [
-  { name: "Historia", icon: "pi pi-book" },
-  { name: "Arte", icon: "pi pi-palette" },
-  { name: "Gastronomía", icon: "pi pi-star" },
-  { name: "Naturaleza", icon: "pi pi-sun" },
-  { name: "Arquitectura", icon: "pi pi-building" },
-  { name: "Museos", icon: "pi pi-images" },
-  { name: "Vida nocturna", icon: "pi pi-moon" },
-  { name: "Compras", icon: "pi pi-shopping-cart" },
-  { name: "Aventura", icon: "pi pi-compass" },
+  { name: "History", icon: "pi pi-book" },
+  { name: "Art", icon: "pi pi-palette" },
+  { name: "Gastronomy", icon: "pi pi-star" },
+  { name: "Nature", icon: "pi pi-sun" },
+  { name: "Architecture", icon: "pi pi-building" },
+  { name: "Museums", icon: "pi pi-images" },
+  { name: "Nightlife", icon: "pi pi-moon" },
+  { name: "Shopping", icon: "pi pi-shopping-cart" },
+  { name: "Adventure", icon: "pi pi-compass" },
   { name: "Relax", icon: "pi pi-cloud" },
 ];
 

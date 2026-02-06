@@ -106,6 +106,7 @@
    ===================== */
 
 .step-card {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -169,6 +170,27 @@
     line-height: 1.6;
     color: var(--color-text-secondary);
     font-weight: 400;
+  }
+
+  &__soon {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-secondary);
+    background: var(--color-secondary-lightest);
+    border: 1px solid var(--color-secondary-soft);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  &--soon {
+    cursor: default;
+
+    &:hover {
+      transform: none;
+    }
   }
 }
 

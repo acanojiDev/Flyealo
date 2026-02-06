@@ -67,14 +67,7 @@
         </p>
       </article>
 
-      <article
-        class="step-card"
-        role="button"
-        tabindex="0"
-        (click)="openStep('step3')"
-        (keydown.enter)="openStep('step3')"
-        (keydown.space)="openStep('step3')"
-      >
+      <article class="step-card step-card--soon" aria-disabled="true">
         <div class="step-card__icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -91,20 +84,14 @@
 
         <span class="step-card__step">Step 3</span>
         <h3 class="step-card__title">Review and customize</h3>
+        <span class="step-card__soon">Coming soon...</span>
         <p class="step-card__description">
           Adjust activities, swap restaurants, or add experiences. Your itinerary adapts to your
           changes.
         </p>
       </article>
 
-      <article
-        class="step-card"
-        role="button"
-        tabindex="0"
-        (click)="openStep('step4')"
-        (keydown.enter)="openStep('step4')"
-        (keydown.space)="openStep('step4')"
-      >
+      <article class="step-card step-card--soon" aria-disabled="true">
         <div class="step-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black">
             <path
@@ -117,6 +104,7 @@
 
         <span class="step-card__step">Step 4</span>
         <h3 class="step-card__title">Book and travel</h3>
+        <span class="step-card__soon">Coming soon...</span>
         <p class="step-card__description">
           Reserve hotels and activities directly through our partners. Access everything offline on
           your trip.

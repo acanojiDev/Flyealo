@@ -1,5 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { TravelFormComponent } from './travel-form-component/travel-form-component';
 import { Itinerary } from '../../core/services/itinerary';
 import { Travel } from '../../core/interfaces/travel';
@@ -22,6 +22,7 @@ export class HomePage {
   error = this.itineraryService.error;
 
   constructor() {
+    window.scrollTo(0, 0);
     this.seo.set({
       title: 'Create your itinerary',
       description: 'Build a personalized travel itinerary with Flyealo.',

@@ -6,6 +6,7 @@ import { Itinerary } from '../../../core/services/itinerary';
 import { take } from 'rxjs';
 import { HistoryCard } from "../history-card/history-card";
 import { InfoModalService } from '../../../core/services/info-modal';
+import { AuthDialogService } from '../../../core/services/auth-dialog';
 
 @Component({
   selector: 'app-header',
@@ -17,7 +18,7 @@ export class Header {
   private authService = inject(Auth);
   private itineraryService = inject(Itinerary);
   private router = inject(Router);
-  private infoModal = inject(InfoModalService);
+  private authDialogs = inject(AuthDialogService);
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
@@ -88,12 +89,9 @@ export class Header {
         this.document.documentElement.classList.add('dark');
       }
     }
-    if (isPlatformBrowser(this.platformId)) {
+    if (this.isBrowser) {
       effect(() => {
-        const isMenuOpen = this.isMenuOpen();
-        const isSidebarOpen = this.isSidebarOpen();
-        
-        if (isMenuOpen || isSidebarOpen) {
+        if (this.isMenuOpen() || this.isSidebarOpen()) {
           this.document.body.style.overflow = 'hidden';
         } else {
           this.document.body.style.overflow = 'auto';
@@ -155,5 +153,13 @@ export class Header {
       this.closeAllMenus();
       this.router.navigate(['/']);
     });
+  }
+
+  openLogin() {
+    this.authDialogs.openLogin();
+  }
+
+  openRegister() {
+    this.authDialogs.openRegister();
   }
 }

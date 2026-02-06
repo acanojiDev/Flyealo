@@ -191,7 +191,9 @@
     color: var(--color-text-inverse);
 
     &:hover {
-      transform: translateY(-2px);
+      background: var(--color-secondary-soft);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px -2px rgba(255, 107, 69, 0.3);
     }
   }
 

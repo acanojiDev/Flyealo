@@ -96,8 +96,7 @@
     font-weight: 500;
 
     &:hover {
-      color: var(--color-text-primary);
-      transform: translateX(4px);
+      text-decoration: underline;
     }
   }
 

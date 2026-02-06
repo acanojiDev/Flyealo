@@ -26,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       const auth = inject(Auth);
       void auth.checkSession();
-    }), provideClientHydration(withEventReplay()),
+    }), 
+    provideClientHydration(withEventReplay()),
   ]
 };

@@ -15,6 +15,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/landing-page/landing-page').then(m => m.LandingPage),
     canActivate: [guestGuard()],
   },
+  {
+    path: 'legal',
+    loadComponent: () => import('./features/legal-page/legal-page').then(m => m.LegalPage),
+  },
+  {
+    path: 'privacy-policy',
+    loadComponent: () => import('./features/privacy-page/privacy-page').then(m => m.PrivacyPage),
+  },
+  {
+    path: 'terms-and-conditions',
+    loadComponent: () => import('./features/terms-page/terms-page').then(m => m.TermsPage),
+  },
   ...seoRoutes,
   {
     path: 'generate-itinerary',

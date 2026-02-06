@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { Header } from "./shared/components/header/header";
 import { InfoModal } from "./shared/components/info-modal/info-modal";
 
@@ -12,4 +12,12 @@ import { InfoModal } from "./shared/components/info-modal/info-modal";
 })
 export class App {
   protected readonly title = signal('flyealo');
+  private router = inject(Router);
+
+   isLegalPage() {
+    const currentUrl = this.router.url;
+    return currentUrl === '/legal' || 
+           currentUrl === '/privacy' || 
+           currentUrl === '/terms';
+  }
 }

@@ -31,8 +31,8 @@
 
       <!-- Desktop Auth Actions (NOT authenticated) -->
       @if (!isAuthenticated()) {
-        <button class="header__login-btn" (click)="loginClick.emit()">Log in</button>
-        <button class="header__cta" (click)="registerClick.emit()">Sign up</button>
+        <button class="header__login-btn" (click)="openLogin()">Sign in</button>
+        <button class="header__cta" (click)="openRegister()">Sign up</button>
       }
 
       <!-- Desktop My Itineraries Button (Authenticated) -->
@@ -88,10 +88,10 @@
 
       <!-- Auth Actions at Bottom (Sticky) -->
       <div class="header__mobile-actions">
-        <button class="header__mobile-login" (click)="loginClick.emit(); closeMenu()">
-          Log in
+        <button class="header__mobile-login" (click)="openLogin(); closeMenu()">
+          Sign in
         </button>
-        <button class="header__mobile-cta" (click)="registerClick.emit(); closeMenu()">
+        <button class="header__mobile-cta" (click)="openRegister(); closeMenu()">
           Sign up
         </button>
       </div>
@@ -132,7 +132,6 @@
 
         <!-- Bottom Actions (Sticky) -->
         <div class="header__mobile-actions">
-          <div class="header__mobile-divider"></div>
           <button class="header__mobile-logout" (click)="logout()">
             <i class="pi pi-sign-out"></i>
             Log out
