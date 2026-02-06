@@ -17,7 +17,7 @@ export class App {
    isLegalPage() {
     const currentUrl = this.router.url;
     return currentUrl === '/legal' || 
-           currentUrl === '/privacy' || 
-           currentUrl === '/terms';
+           currentUrl === '/terms-and-conditions' || 
+           currentUrl === '/privacy-policy';
   }
 }
