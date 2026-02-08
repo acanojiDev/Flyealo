@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@netlify/angular-runtime": "^3.0.1"
+  }
+}
