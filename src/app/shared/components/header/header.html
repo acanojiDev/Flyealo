@@ -1,0 +1,189 @@
+<header class="header">
+  <div class="header__container">
+    <!-- Logo -->
+    <div class="header__brand" routerLink="" (click)="closeAllMenus()">
+      <img width="150px" src="flyealo.ico" alt="Flyealo" />
+    </div>
+
+    <!-- Desktop Navigation - Only shown when NOT authenticated -->
+    @if (!isAuthenticated()) {
+      <nav class="header__nav">
+        <a class="header__link" href="#destination">Destinations</a>
+        <a class="header__link" href="#how-it-works">How it works</a>
+        <a class="header__link" href="#pricing">Pricing</a>
+      </nav>
+    }
+
+    <!-- Right Actions Section -->
+    <div class="header__actions">
+      <!-- Theme Toggle (Always visible) -->
+      <button
+        class="header__theme-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="isDarkTheme() ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        @if (isDarkTheme()) {
+          <i class="pi pi-sun"></i>
+        } @else {
+          <i class="pi pi-moon"></i>
+        }
+      </button>
+
+      <!-- Desktop Auth Actions (NOT authenticated) -->
+      @if (!isAuthenticated()) {
+        <button class="header__login-btn" (click)="openLogin()">Sign in</button>
+        <button class="header__cta" (click)="openRegister()">Sign up</button>
+      }
+
+      <!-- Desktop My Itineraries Button (Authenticated) -->
+      @if (isAuthenticated()) {
+        <button class="header__itineraries-btn" (click)="toggleSidebar()">
+          <i class="pi pi-list"></i>
+          My itineraries
+        </button>
+      }
+
+      <!-- Hamburger Menu (Mobile) -->
+      @if (!isMenuOpen()) {
+        <button
+          class="header__hamburger"
+          (click)="toggleMenu()"
+          [class.header__hamburger--open]="isMenuOpen()"
+          aria-label="Toggle menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ========================================
+       MOBILE MENU OVERLAY (Blur background)
+       ======================================== -->
+  @if (isMenuOpen()) {
+    <div class="header__mobile-overlay" (click)="closeMenu()"></div>
+  }
+
+  <!-- ========================================
+       MOBILE MENU - NOT AUTHENTICATED
+       ======================================== -->
+  @if (!isAuthenticated() && isMenuOpen()) {
+    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
+      <!-- Header with close button -->
+      <div class="header__mobile-menu-header">
+        <button class="header__mobile-close-btn" (click)="closeMenu()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="header__mobile-menu-content">
+        <nav class="header__mobile-nav">
+          <a class="header__mobile-link" href="#destination" (click)="closeMenu()">Destinations</a>
+          <a class="header__mobile-link" href="#how-it-works" (click)="closeMenu()">How it works</a>
+          <a class="header__mobile-link" href="#pricing" (click)="closeMenu()">Pricing</a>
+        </nav>
+      </div>
+
+      <!-- Auth Actions at Bottom (Sticky) -->
+      <div class="header__mobile-actions">
+        <button class="header__mobile-login" (click)="openLogin(); closeMenu()">
+          Sign in
+        </button>
+        <button class="header__mobile-cta" (click)="openRegister(); closeMenu()">
+          Sign up
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================
+       MOBILE MENU - AUTHENTICATED (Itineraries)
+       ======================================== -->
+  @if (isAuthenticated() && isMenuOpen()) {
+    <div class="header__mobile-menu" [class.header__mobile-menu--open]="isMenuOpen()">
+      <div class="header__mobile-itineraries">
+        <!-- Header with close button -->
+        <div class="header__mobile-itineraries-header">
+          <h3>My Itineraries</h3>
+          <button class="header__mobile-close-btn" (click)="closeMenu()">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- Itineraries List (Scrollable) -->
+        <div class="header__mobile-itineraries-list">
+          @if (isLoadingTravels()) {
+            <div class="header__loading">
+              <p>Loading your itineraries...</p>
+            </div>
+          } @else if (userTravels().length === 0) {
+            <p class="header__empty-state">You don't have any itineraries yet</p>
+          } @else {
+            @for (travel of userTravels(); track travel.id) {
+              <app-history-card
+                [itinerary]="travel"
+                (cardClick)="goToItinerary($event)"
+              ></app-history-card>
+            }
+          }
+        </div>
+
+        <!-- Bottom Actions (Sticky) -->
+        <div class="header__mobile-actions">
+          <button class="header__mobile-logout" (click)="logout()">
+            <i class="pi pi-sign-out"></i>
+            Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================
+       DESKTOP SIDEBAR - AUTHENTICATED
+       ======================================== -->
+  @if (isAuthenticated()) {
+    @if (isSidebarOpen()) {
+      <div class="header__sidebar-overlay" (click)="toggleSidebar()"></div>
+    }
+
+    <div class="header__sidebar" [class.header__sidebar--open]="isSidebarOpen()">
+      <!-- Header -->
+      <div class="header__sidebar-header">
+        <h2>My Itineraries</h2>
+        <button class="header__sidebar-close" (click)="toggleSidebar()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="header__sidebar-content">
+        @if (isLoadingTravels()) {
+          <div class="header__loading">
+            <p>Loading your itineraries...</p>
+          </div>
+        } @else if (userTravels().length === 0) {
+          <p class="header__empty-state">You don't have any itineraries yet</p>
+        } @else {
+          @for (travel of userTravels(); track travel.id) {
+            <app-history-card
+              [itinerary]="travel"
+              [routerLink]="['/details']"
+              (cardClick)="goToItinerary($event)"
+            ></app-history-card>
+          }
+        }
+      </div>
+
+      <!-- Footer with Logout -->
+      <div class="header__sidebar-footer">
+        <button class="header__sidebar-logout" (click)="logout()">
+          <i class="pi pi-sign-out"></i>
+          Log out
+        </button>
+      </div>
+    </div>
+  }
+</header>

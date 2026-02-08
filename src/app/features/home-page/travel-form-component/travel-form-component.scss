@@ -1,0 +1,238 @@
+.travel-form {
+  padding: 1.5rem;
+
+  &__title {
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    &-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      span {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  &__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  &__input-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__input,
+  &__textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    background: var(--color-background-soft);
+    transition: all 0.2s ease;
+
+    &::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
+      background: var(--color-background);
+    }
+  }
+
+  &__textarea {
+    resize: none;
+  }
+
+  &__button {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: var(--color-primary-soft);
+      transform: translateY(-1px);
+    }
+  }
+
+  &__destinations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  &__destination {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--color-background-light);
+    color: var(--color-text-primary);
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+
+    &-remove {
+      border: none;
+      background: none;
+      color: var(--color-text-muted);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 0;
+
+      &:hover {
+        color: var(--color-danger);
+      }
+    }
+  }
+
+  &__group-special {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+
+  &__interests {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  &__interest {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0.5rem;
+    background: var(--color-background-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+
+    &-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    &-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      transition: color 0.2s ease;
+    }
+
+    &:hover:not(&--disabled) {
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+
+    &--selected {
+      background: var(--color-primary);
+      font-weight: 500;
+
+      .travel-form__interest-icon, .travel-form__interest-label {
+        color: var(--color-text-inverse) !important;
+      }
+    }
+
+    &--disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+  }
+
+  &__submit {
+    margin-top: 1rem;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    padding: 1rem;
+    border-radius: var(--radius-full);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-md);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-soft);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 217, 255, 0.2);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  &__error {
+    font-size: 0.8rem;
+    color: var(--color-danger);
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+}

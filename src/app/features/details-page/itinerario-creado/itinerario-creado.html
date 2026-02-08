@@ -1,0 +1,106 @@
+<div class="itinerary">
+  @if (itinerario()) {
+    <header class="itinerary__header">
+      <div class="itinerary__header-content">
+        <h2 class="itinerary__title">Tu viaje a {{ itinerario()?.cities?.[0] }}</h2>
+        <p class="itinerary__subtitle">Un recorrido personalizado diseñado por IA</p>
+      </div>
+    </header>
+
+    <div class="itinerary__days">
+      <p-accordion [value]="selectedDay()" (valueChange)="selectedDay.set($event!.toString())">
+        @for (day of itineraryData()?.days; track day.day) {
+          <p-accordion-panel [value]="day.day" class="day-panel">
+            <p-accordion-header>
+              <ng-template #toggleicon let-active="active">
+                @if (active) {
+                  <i class="pi pi-minus"></i>
+                } @else {
+                  <i class="pi pi-plus"></i>
+                }
+              </ng-template>
+              <div class="flex items-center gap-3 w-full">
+                <p-avatar label="{{day.day}}" shape="circle" styleClass="day-avatar" />
+                <div class="day-header-text">
+                  <span class="font-bold block">Día {{ day.day }}</span>
+                  <span class="text-sm text-secondary">{{ day.title }}</span>
+                </div>
+                <p-badge [value]="day.places.length.toString()" severity="info" class="ml-auto mr-2" />
+              </div>
+            </p-accordion-header>
+            <p-accordion-content>
+              <section class="meals">
+                <div class="meal-item">
+                  <div class="meal-item__info">
+                    <span class="meal-item__label">Desayuno</span>
+                    <p class="meal-item__desc">{{ day.meals.breakfast }}</p>
+                  </div>
+                </div>
+                <div class="meal-item">
+                  <div class="meal-item__info">
+                    <span class="meal-item__label">Almuerzo</span>
+                    <p class="meal-item__desc">{{ day.meals.lunch }}</p>
+                  </div>
+                </div>
+                <div class="meal-item">
+                  <div class="meal-item__info">
+                    <span class="meal-item__label">Cena</span>
+                    <p class="meal-item__desc">{{ day.meals.dinner }}</p>
+                  </div>
+                </div>
+              </section>
+              <div class="timeline">
+                @for (place of day.places; track $index) {
+                  <article class="timeline__item">
+                    <div class="timeline__marker">
+                      <div class="timeline__dot"></div>
+                      @if (!$last) {
+                        <div class="timeline__line"></div>
+                      }
+                    </div>
+                    <div class="timeline__content">
+                      <div class="place-card">
+                        <div class="place-card__header">
+                          <span class="place-card__time">{{ place.visit_time }}</span>
+                          <span class="place-card__duration">({{ place.duration }})</span>
+                        </div>
+                        <h4 class="place-card__name">{{ place.name }}</h4>
+                        <p class="place-card__history">{{ place.history }}</p>
+
+                        @if (place.tips && place.tips.length > 0) {
+                          <div class="place-card__tips">
+                            <span class="place-card__tips-label">Tips:</span>
+                            <ul class="place-card__tips-list">
+                              @for (tip of place.tips; track $index) {
+                                <li>{{ tip }}</li>
+                              }
+                            </ul>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </article>
+                }
+              </div>
+              <footer class="day-card__footer">
+                <div class="cost-estimate">
+                  <span class="cost-estimate__label">Presupuesto estimado:</span>
+                  <span class="cost-estimate__value">
+                    {{ day.daily_cost_estimate.min }} - {{ day.daily_cost_estimate.max }}
+                    {{ day.daily_cost_estimate.currency }}
+                  </span>
+                </div>
+              </footer>
+            </p-accordion-content>
+          </p-accordion-panel>
+        }
+      </p-accordion>
+    </div>
+  } @else {
+    <div class="itinerary__loading">
+      <div class="spinner"></div>
+      <p>Estamos puliendo los detalles de tu aventura...</p>
+      <p-progress-spinner strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
+    </div>
+  }
+</div>

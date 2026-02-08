@@ -1,0 +1,67 @@
+.auth-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+  margin: auto; /* Center horizontally and vertically */
+  inset: 0;
+  max-width: fit-content;
+  max-height: fit-content;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    background: var(--color-background-card);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.1),
+      0 0 0 1px var(--color-border) inset;
+    width: 90vw; /* Responsive width */
+    max-width: 480px;
+    position: relative;
+    animation: dialogShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin: 0 auto; /* Ensure content is centered if dialog stretches */
+  }
+
+  &__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-background-soft);
+    color: var(--color-text-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+
+    &:hover {
+      background: var(--color-border);
+      color: var(--color-text-primary);
+      transform: rotate(90deg);
+    }
+  }
+}
+
+@keyframes dialogShow {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

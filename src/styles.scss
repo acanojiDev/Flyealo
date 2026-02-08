@@ -1,0 +1,266 @@
+@import 'mapbox-gl/dist/mapbox-gl.css';
+@import "primeicons/primeicons.css";
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* FLYEALO THEME - Light & Dark Mode */
+:root {
+  // Fonts
+  --font-primary: 'Inter', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+
+  // ============================================
+  // BRAND COLORS (from Flyealo logo)
+  // ============================================
+  --color-brand-navy: #1f4e78;      // Primary navy from logo
+  --color-brand-orange: #ff6b45;    // Vibrant orange/coral from rocket
+  --color-brand-gray-light: #d4d4d8; // Light gray from logo
+
+  // ============================================
+  // PRIMARY PALETTE (Light Mode Defaults)
+  // ============================================
+  --color-primary: #1f4e78;          // Navy as primary
+  --color-primary-soft: #2d5a8c;     // Lighter navy
+  --color-primary-lighter: #3d6fa0;  // Even lighter
+  --color-primary-lightest: #eef2f8; // Very light navy background
+
+  // ============================================
+  // SECONDARY PALETTE (Accent)
+  // ============================================
+  --color-secondary: #ff6b45;        // Orange - brand accent
+  --color-secondary-soft: #ffb8a0;   // Lighter orange
+  --color-secondary-lighter: #ffe6db; // Very light orange
+  --color-secondary-lightest: #fff5f0; // Barely visible orange
+
+  // ============================================
+  // TERTIARY PALETTE (Complementary)
+  // ============================================
+  --color-tertiary: #00a8cc;         // Cyan/turquoise (complements navy+orange)
+  --color-tertiary-soft: #66d4e8;    // Lighter cyan
+  --color-tertiary-lighter: #b3e9f5; // Very light cyan
+  --color-tertiary-lightest: #e8f8fc; // Barely visible cyan
+
+  // ============================================
+  // SEMANTIC COLORS (Light Mode)
+  // ============================================
+  --color-background: #ffffff;
+  --color-background-soft: #f8fafc;
+  --color-background-card: #ffffff;
+  --color-background-card-hover: #f1f5fb;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #eef2f8;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-border: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+  --color-border-dark: #94a3b8;
+  --color-border-brand: #1f4e78;
+
+  // ============================================
+  // ACCENT COLORS
+  // ============================================
+  --color-accent: #00a8cc;
+  --color-accent-soft: rgba(0, 168, 204, 0.1);
+  --color-accent-muted: rgba(0, 168, 204, 0.08);
+
+  // ============================================
+  // STATUS COLORS
+  // ============================================
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-danger: #e11d48;
+  --color-danger-light: #ffe4e6;
+  --color-info: #00a8cc;
+  --color-info-light: #cff0f9;
+
+  // ============================================
+  // INTERACTIVE COLORS
+  // ============================================
+  --color-link: #1f4e78;
+  --color-link-hover: #2d5a8c;
+  --color-link-visited: #5b4b9e;
+  --color-button-primary-disabled: #9cb2c8;
+  --color-button-secondary-disabled: #e6e9ef;
+  --color-button-tertiary-disabled: #bfe5f0;
+
+  // ============================================
+  // SHADOWS
+  // ============================================
+  --shadow-xs: 0 1px 1px rgba(31, 78, 120, 0.05);
+  --shadow-sm: 0 1px 2px rgba(31, 78, 120, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(31, 78, 120, 0.12);
+  --shadow-lg: 0 10px 15px -3px rgba(31, 78, 120, 0.15);
+  --shadow-xl: 0 20px 25px -5px rgba(31, 78, 120, 0.2);
+  --shadow-2xl: 0 25px 50px -12px rgba(31, 78, 120, 0.25);
+
+  // Brand-colored shadow (warm)
+  --shadow-brand: 0 8px 16px -2px rgba(255, 107, 69, 0.15);
+
+  // ============================================
+  // BORDER RADIUS
+  // ============================================
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --radius-2xl: 48px;
+  --radius-full: 999px;
+
+  // ============================================
+  // SPACING (optional but useful)
+  // ============================================
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  // ============================================
+  // TRANSITIONS
+  // ============================================
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+// ============================================
+// DARK MODE OVERRIDES
+// ============================================
+.dark {
+  // ============================================
+  // PRIMARY PALETTE (Dark Mode)
+  // ============================================
+  --color-primary: #a8d5ff;          // Light blue for text
+  --color-primary-soft: #79c3ff;     // Lighter
+  --color-primary-lighter: #4ab5ff;  // Even lighter
+  --color-primary-lightest: #1e293b; // Dark background
+
+  // ============================================
+  // SECONDARY PALETTE (Dark Mode)
+  // ============================================
+  --color-secondary: #ff8866;
+  --color-secondary-soft: #ffb3a0;
+  --color-secondary-lighter: #ffd4c9;
+  --color-secondary-lightest: #2d1810;
+
+  // ============================================
+  // TERTIARY PALETTE (Dark Mode)
+  // ============================================
+  --color-tertiary: #4ee0fd;         // Brighter cyan
+  --color-tertiary-soft: #76ebff;    // Even brighter
+  --color-tertiary-lighter: #a4f7ff; // Very bright
+  --color-tertiary-lightest: #0d3d47; // Dark background
+
+  // ============================================
+  // SEMANTIC COLORS (Dark Mode)
+  // ============================================
+  --color-background: #0a0e27;       // Very dark navy background
+  --color-background-soft: #0f172a;  // Dark slate
+  --color-background-card: rgba(30, 41, 59, 0.8);  // Glass effect card
+  --color-background-card-hover: rgba(30, 41, 59, 0.95);
+  --color-surface: #0f172a;
+  --color-surface-secondary: #1e293b;
+
+  --color-text-primary: #e2e8f0;     // Light gray text
+  --color-text-secondary: #94a3b8;   // Medium gray
+  --color-text-muted: #64748b;       // Muted gray
+  --color-text-inverse: #0a0e27;
+
+  --color-border: #1e293b;
+  --color-border-hover: #334155;
+  --color-border-dark: #475569;
+  --color-border-brand: #a8d5ff;
+
+  // ============================================
+  // ACCENT COLORS (Dark Mode)
+  // ============================================
+  --color-accent: #4ee0fd;
+  --color-accent-soft: rgba(78, 224, 253, 0.15);
+  --color-accent-muted: rgba(78, 224, 253, 0.08);
+
+  // ============================================
+  // STATUS COLORS (Dark Mode)
+  // ============================================
+  --color-success: #34d399;
+  --color-success-light: rgba(52, 211, 153, 0.2);
+  --color-warning: #fbbf24;
+  --color-warning-light: rgba(251, 191, 36, 0.2);
+  --color-danger: #f87171;
+  --color-danger-light: rgba(248, 113, 113, 0.2);
+  --color-info: #4ee0fd;
+  --color-info-light: rgba(78, 224, 253, 0.2);
+
+  // ============================================
+  // INTERACTIVE COLORS (Dark Mode)
+  // ============================================
+  --color-link: #a8d5ff;
+  --color-link-hover: #d6eeff;
+  --color-link-visited: #c9b3ff;
+  --color-button-primary-disabled: #4b5a6a;
+  --color-button-secondary-disabled: #1b2430;
+  --color-button-tertiary-disabled: #1f4a57;
+
+  // ============================================
+  // SHADOWS (Dark Mode)
+  // ============================================
+  --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+
+  // Brand-colored shadow (warm, darker)
+  --shadow-brand: 0 8px 16px -2px rgba(255, 107, 69, 0.25);
+
+  // ============================================
+  // LIGHT BACKGROUND (for dark mode)
+  // ============================================
+  --color-background-light: #0f172a;
+}
+
+// ============================================
+// GLOBAL STYLES
+// ============================================
+body {
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  transition: background-color var(--transition-base), 
+              color var(--transition-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+p, span, li, a {
+  transition: color var(--transition-base);
+}

@@ -1,0 +1,28 @@
+<div class="home-page">
+  <!-- Animated Background -->
+  <div class="home-page__bg">
+    <div class="home-page__blob home-page__blob--1"></div>
+    <div class="home-page__blob home-page__blob--2"></div>
+    <div class="home-page__blob home-page__blob--3"></div>
+  </div>
+
+  <main class="home-page__main">
+    <div class="home-page__container">
+      <div class="home-page__header">
+        <h1 class="home-page__title" style="white-space: pre-line">
+          Hello, {{ user?.user_metadata?.['username'] ?? welcomeName() }}!
+        </h1>
+        <p class="home-page__subtitle">Where would you like to go today?</p>
+      </div>
+
+      <div class="home-page__content">
+        <div class="home-page__form-container">
+          <app-travel-form-component
+            (submitForm)="submitForm($event)"
+            [isLoading]="isLoading()"
+          ></app-travel-form-component>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
