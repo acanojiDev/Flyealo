@@ -688,7 +688,7 @@ Por favor, genera un itinerario detallado. Recuerda:
       systemInstruction: SYSTEM_PROMPT,
       responseMimeType: 'application/json',
       temperature: 0,
-      maxOutputTokens: 6000,
+      maxOutputTokens: 13000,
     },
   });
 
