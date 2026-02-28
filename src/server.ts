@@ -7,7 +7,7 @@ import express, { Request, Response } from 'express';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI } from '@google/genai';
-import { environment } from '../src/app/environment/environment.prod';
+import { environment } from './environments/environment.prod';
 import { SEO_PAGES } from './app/features/seo-page/seo-pages';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
