@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ItinerarioCreado } from "./itinerario-creado/itinerario-creado";
 import { RutaGenerada } from "./ruta-generada/ruta-generada";
-import { Seo } from '../../core/services/seo';
+/* import { Seo } from '../../core/services/seo'; */
 
 @Component({
   selector: 'app-details-page',
@@ -10,10 +10,10 @@ import { Seo } from '../../core/services/seo';
   styleUrl: './details-page.scss',
 })
 export class DetailsPage {
-  seo = inject(Seo);
+/*   seo = inject(Seo); */
 
   constructor() {
-    this.seo.set({
+/*     this.seo.set({
       title: 'Your itinerary',
       description: 'Your personalized travel itinerary.',
       path: '/details',
@@ -26,6 +26,6 @@ export class DetailsPage {
         url: this.seo.resolveUrl('/details'),
         inLanguage: 'en-ES',
       },
-    });
+    }); */
   }
 }

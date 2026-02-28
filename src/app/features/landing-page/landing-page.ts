@@ -12,7 +12,7 @@ import { RegisterComponent } from './register-component/register-component';
 import { Auth } from '../../core/services/auth';
 import { AuthDialogService } from '../../core/services/auth-dialog';
 import { Router } from '@angular/router';
-import { Seo } from '../../core/services/seo';
+/* import { Seo } from '../../core/services/seo'; */
 
 @Component({
   selector: 'app-landing-page',
@@ -36,12 +36,12 @@ export class LandingPage {
   authService = inject(Auth);
   authDialogs = inject(AuthDialogService);
   router = inject(Router);
-  seo = inject(Seo);
+/*   seo = inject(Seo); */
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   constructor() {
-    this.seo.set({
+/*     this.seo.set({
       title: 'AI Travel Itinerary Planner for Europe',
       description: 'Create personalized travel itineraries for European cities in seconds. Plan day-by-day routes, places, and interests with Flyealo.',
       path: '/',
@@ -59,7 +59,7 @@ export class LandingPage {
           url: this.seo.resolveUrl('/'),
         },
       },
-    });
+    }); */
 
     if (this.isBrowser) {
       effect(() => {

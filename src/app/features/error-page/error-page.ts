@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Seo } from '../../core/services/seo';
+/* import { Seo } from '../../core/services/seo'; */
 
 @Component({
   selector: 'app-error-page',
@@ -8,10 +8,10 @@ import { Seo } from '../../core/services/seo';
   styleUrl: './error-page.scss',
 })
 export class ErrorPage {
-  seo = inject(Seo);
+/*   seo = inject(Seo); */
 
   constructor() {
-    this.seo.set({
+/*     this.seo.set({
       title: 'Page not found',
       description: 'The page you are looking for does not exist.',
       path: '/404',
@@ -24,6 +24,6 @@ export class ErrorPage {
         url: this.seo.resolveUrl('/404'),
         inLanguage: 'en-ES',
       },
-    });
+    }); */
   }
 }

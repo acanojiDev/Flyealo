@@ -6,7 +6,8 @@ import {
 import express, { Request, Response } from 'express';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import { environment } from './environments/environment.prod';
+import { GoogleGenAI } from '@google/genai';
+import { environment } from '../src/app/environment/environment.prod';
 import { SEO_PAGES } from './app/features/seo-page/seo-pages';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -54,7 +55,7 @@ const getPublicOrigin = (req: Request): string => {
 };
 
 // ===== VARIABLES DE ENTORNO =====
-const GROQ_API_KEY = environment.GROQ_KEY;
+const GEMINI_API_KEY = environment.GEMINI_KEY;
 const SUPABASE_URL = environment.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = environment.SUPABASE_KEY;
 const GOOGLE_MAPS_KEY = environment.GOOGLE_MAPS_KEY;
@@ -62,6 +63,9 @@ const SITE_URL = environment.SITE_URL || '';
 
 // ===== INICIALIZAR SUPABASE =====
 const supabase = createClient(SUPABASE_URL || '', SUPABASE_SERVICE_KEY || '');
+
+// ===== INICIALIZAR GEMINI =====
+const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // ===== SYSTEM PROMPT =====
 const SYSTEM_PROMPT = `
@@ -155,15 +159,11 @@ RECIBIRÁS datos en este formato:
 - Las descripciones pueden ser EN ESPAÑOL
 - Los nombres de lugares (place.name) deben ser EXACTOS como en Google Maps`;
 
-
 const MAX_CITY_RADIUS_KM = 50;
-const STRICT_PLACE_VALIDATION = true;
-const DETAILS_CANDIDATE_LIMIT = 5;
 const STREET_TYPES = new Set(['route', 'street_address', 'intersection', 'plus_code']);
+const PLACES_CONCURRENCY = 8;
 
-// ===== FUNCIONES HELPER =====
-
-// Cache para coordenadas de ciudades (evita llamadas repetidas)
+// ===== TIPOS =====
 type CityGeo = {
   lng: number;
   lat: number;
@@ -173,12 +173,11 @@ type CityGeo = {
   countryCode?: string;
 };
 
+// ===== CACHES =====
 const cityCoordinatesCache: Map<string, CityGeo | null> = new Map();
+const placeCache: Map<string, any> = new Map();
 
-/**
- * Mapeo de ciudades conocidas para evitar ambigüedades
- * (Londres → London, UK en lugar de Londres, Argentina)
- */
+// ===== MAPEOS Y ALIAS =====
 const CITY_ALIASES: Record<string, string> = {
   'londres': 'London, United Kingdom',
   'paris': 'Paris, France',
@@ -215,6 +214,8 @@ const GOOGLE_TYPE_MAP: Record<string, string> = {
   'iglesia': 'church',
 };
 
+// ===== FUNCIONES HELPER =====
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
@@ -243,7 +244,9 @@ function resolveDayCity(dayCity: string | undefined, cities: string[]): string {
   const dayVariants = buildCityVariants(dayCity);
   for (let i = 0; i < cities.length; i++) {
     const cityVariants = buildCityVariants(cities[i]);
-    const matches = dayVariants.some((d) => cityVariants.some((c) => d === c || d.includes(c) || c.includes(d)));
+    const matches = dayVariants.some((d) =>
+      cityVariants.some((c) => d === c || d.includes(c) || c.includes(d))
+    );
     if (matches) return cities[i];
   }
 
@@ -263,12 +266,15 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   const dLng = toRad(lng2 - lng1);
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLng / 2) ** 2;
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function buildRadiusBbox(lat: number, lng: number, radiusKm: number): [number, number, number, number] {
+function buildRadiusBbox(
+  lat: number,
+  lng: number,
+  radiusKm: number
+): [number, number, number, number] {
   const latDelta = radiusKm / 111;
   const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180) || 1);
   return [lng - lngDelta, lat - latDelta, lng + lngDelta, lat + latDelta];
@@ -300,7 +306,11 @@ function extractCityComponentStrings(components: any[]): string[] {
   return values;
 }
 
-function isWithinBbox(lat: number, lng: number, bbox?: [number, number, number, number]): boolean {
+function isWithinBbox(
+  lat: number,
+  lng: number,
+  bbox?: [number, number, number, number]
+): boolean {
   if (!bbox) return true;
   const [minLng, minLat, maxLng, maxLat] = bbox;
   return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
@@ -313,13 +323,33 @@ function isStreetLike(types: any[]): boolean {
 function getTypeScore(types: any[]): number {
   if (!Array.isArray(types)) return 0;
   let score = 0;
-  if (types.some((t) => ['tourist_attraction', 'museum', 'park', 'art_gallery', 'place_of_worship', 'church', 'aquarium', 'zoo', 'amusement_park', 'stadium', 'natural_feature'].includes(t))) {
+  if (
+    types.some((t) =>
+      [
+        'tourist_attraction',
+        'museum',
+        'park',
+        'art_gallery',
+        'place_of_worship',
+        'church',
+        'aquarium',
+        'zoo',
+        'amusement_park',
+        'stadium',
+        'natural_feature',
+      ].includes(t)
+    )
+  ) {
     score += 2;
   }
   if (types.some((t) => ['point_of_interest', 'establishment'].includes(t))) {
     score += 1;
   }
-  if (types.some((t) => ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery', 'food'].includes(t))) {
+  if (
+    types.some((t) =>
+      ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery', 'food'].includes(t)
+    )
+  ) {
     score += 1;
   }
   return score;
@@ -332,7 +362,8 @@ function isFeatureInCity(feature: any, cityNames: string[]): boolean {
   const haystacks: string[] = [];
   if (feature?.place_name) haystacks.push(normalizeText(feature.place_name));
   if (feature?.formatted_address) haystacks.push(normalizeText(feature.formatted_address));
-  if (feature?.address_components) haystacks.push(...extractCityComponentStrings(feature.address_components));
+  if (feature?.address_components)
+    haystacks.push(...extractCityComponentStrings(feature.address_components));
   if (feature?.vicinity) haystacks.push(normalizeText(feature.vicinity));
   if (feature?.text) haystacks.push(normalizeText(feature.text));
   if (feature?.name) haystacks.push(normalizeText(feature.name));
@@ -355,77 +386,38 @@ function isNameMatch(query: string, feature: any): boolean {
 function getRelevanceScore(feature: any): number {
   if (typeof feature?.relevance === 'number') return feature.relevance;
   const rating = typeof feature?.rating === 'number' ? feature.rating : 0;
-  const total = typeof feature?.user_ratings_total === 'number' ? feature.user_ratings_total : 0;
+  const total =
+    typeof feature?.user_ratings_total === 'number' ? feature.user_ratings_total : 0;
   return rating * Math.log10(total + 1);
 }
 
 function getAddressComponent(components: any[], type: string): string | undefined {
   if (!Array.isArray(components)) return undefined;
-  const match = components.find((c) => Array.isArray(c.types) && c.types.includes(type));
+  const match = components.find(
+    (c) => Array.isArray(c.types) && c.types.includes(type)
+  );
   return match?.long_name;
 }
 
 function getCountryCode(components: any[]): string | undefined {
   if (!Array.isArray(components)) return undefined;
-  const match = components.find((c) => Array.isArray(c.types) && c.types.includes('country'));
+  const match = components.find(
+    (c) => Array.isArray(c.types) && c.types.includes('country')
+  );
   return match?.short_name?.toLowerCase();
 }
 
-async function fetchPlaceDetails(placeId: string): Promise<any | null> {
-  if (!GOOGLE_MAPS_KEY) return null;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json` +
-    `?place_id=${encodeURIComponent(placeId)}` +
-    `&fields=place_id,name,formatted_address,geometry,address_component,types,rating,user_ratings_total` +
-    `&key=${GOOGLE_MAPS_KEY}` +
-    `&language=es`;
+// ===== GOOGLE PLACES FUNCTIONS =====
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    console.error(`Google Place Details HTTP ${response.status} → ${placeId}`);
-    return null;
-  }
-  const data = await response.json();
-  if (data.status && data.status !== 'OK') {
-    console.error(`Google Place Details status ${data.status} → ${placeId} ${data.error_message || ''}`.trim());
-    return null;
-  }
-  return data.result || null;
-}
-
-async function fetchFindPlaceCandidates(query: string, cityGeo: CityGeo | null): Promise<any[]> {
+async function fetchTextSearchResults(
+  query: string,
+  cityGeo: CityGeo | null,
+  placeType?: string
+): Promise<any[]> {
   if (!GOOGLE_MAPS_KEY) return [];
 
-  let url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
-    `?input=${encodeURIComponent(query)}` +
-    `&inputtype=textquery` +
-    `&fields=place_id,name,formatted_address,geometry,types,rating,user_ratings_total` +
-    `&key=${GOOGLE_MAPS_KEY}` +
-    `&language=es`;
-
-  if (cityGeo?.lat != null && cityGeo?.lng != null) {
-    url += `&locationbias=circle:${MAX_CITY_RADIUS_KM * 1000}@${cityGeo.lat},${cityGeo.lng}`;
-  }
-  if (cityGeo?.countryCode) {
-    url += `&region=${cityGeo.countryCode}`;
-  }
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    console.error(`Google FindPlace HTTP ${response.status} → ${query}`);
-    return [];
-  }
-  const data = await response.json();
-  if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    console.error(`Google FindPlace status ${data.status} → ${query} ${data.error_message || ''}`.trim());
-    return [];
-  }
-  return Array.isArray(data.candidates) ? data.candidates : [];
-}
-
-async function fetchTextSearchResults(query: string, cityGeo: CityGeo | null, placeType?: string): Promise<any[]> {
-  if (!GOOGLE_MAPS_KEY) return [];
-
-  let url = `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+  let url =
+    `https://maps.googleapis.com/maps/api/place/textsearch/json` +
     `?query=${encodeURIComponent(query)}` +
     `&key=${GOOGLE_MAPS_KEY}` +
     `&language=es`;
@@ -451,7 +443,9 @@ async function fetchTextSearchResults(query: string, cityGeo: CityGeo | null, pl
 
   const data = await response.json();
   if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    console.error(`Google TextSearch status ${data.status} → ${query} ${data.error_message || ''}`.trim());
+    console.error(
+      `Google TextSearch status ${data.status} → ${query} ${data.error_message || ''}`.trim()
+    );
     return [];
   }
   return Array.isArray(data.results) ? data.results : [];
@@ -463,12 +457,10 @@ async function fetchTextSearchResults(query: string, cityGeo: CityGeo | null, pl
 async function getCityCoordinates(city: string): Promise<CityGeo | null> {
   const cacheKey = city.toLowerCase().trim();
 
-  // Revisar cache primero
   if (cityCoordinatesCache.has(cacheKey)) {
     return cityCoordinatesCache.get(cacheKey)!;
   }
 
-  // Usar alias si existe (evita ambigüedades como Londres → Argentina)
   const searchCity = CITY_ALIASES[cacheKey] || city;
 
   try {
@@ -480,8 +472,8 @@ async function getCityCoordinates(city: string): Promise<CityGeo | null> {
 
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json` +
-      `?address=${encodeURIComponent(searchCity)}` +
-      `&key=${GOOGLE_MAPS_KEY}`
+        `?address=${encodeURIComponent(searchCity)}` +
+        `&key=${GOOGLE_MAPS_KEY}`
     );
 
     if (!response.ok) {
@@ -498,10 +490,10 @@ async function getCityCoordinates(city: string): Promise<CityGeo | null> {
       return null;
     }
 
-    // Preferir resultados de tipo "locality" (ciudad)
     const bestResult =
-      data.results.find((r: any) => Array.isArray(r.types) && r.types.includes('locality')) ||
-      data.results[0];
+      data.results.find(
+        (r: any) => Array.isArray(r.types) && r.types.includes('locality')
+      ) || data.results[0];
 
     const geometry = bestResult.geometry || {};
     const location = geometry.location || {};
@@ -510,9 +502,15 @@ async function getCityCoordinates(city: string): Promise<CityGeo | null> {
       cityCoordinatesCache.set(cacheKey, null);
       return null;
     }
+
     const bounds = geometry.bounds || geometry.viewport;
     const bbox = bounds
-      ? [bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lng, bounds.northeast.lat] as [number, number, number, number]
+      ? ([
+          bounds.southwest.lng,
+          bounds.southwest.lat,
+          bounds.northeast.lng,
+          bounds.northeast.lat,
+        ] as [number, number, number, number])
       : buildRadiusBbox(location.lat, location.lng, MAX_CITY_RADIUS_KM);
 
     const coords: CityGeo = {
@@ -525,13 +523,14 @@ async function getCityCoordinates(city: string): Promise<CityGeo | null> {
         getAddressComponent(bestResult.address_components, 'administrative_area_level_1') ||
         bestResult.formatted_address,
       placeName: bestResult.formatted_address,
-      countryCode: getCountryCode(bestResult.address_components)
+      countryCode: getCountryCode(bestResult.address_components),
     };
 
-    console.log(`📍 Ciudad geocodificada (Google): ${city} → ${coords.placeName} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+    console.log(
+      `📍 Ciudad geocodificada (Google): ${city} → ${coords.placeName} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`
+    );
     cityCoordinatesCache.set(cacheKey, coords);
     return coords;
-
   } catch (error) {
     console.error(`Error geocoding city: ${city}`, error);
     cityCoordinatesCache.set(cacheKey, null);
@@ -540,17 +539,22 @@ async function getCityCoordinates(city: string): Promise<CityGeo | null> {
 }
 
 /**
- * Busca un lugar en Google Places con precisión mejorada usando location+radius
+ * Busca un lugar en Google Places — optimizado: una sola llamada TextSearch
+ * en lugar de FindPlace + TextSearch + Details (3 llamadas).
  */
 async function enrichPlaceWithGoogle(
   placeName: string,
   city: string,
   placeType?: string
 ): Promise<any> {
-  try {
-    // Paso 1: Obtener coordenadas del centro de la ciudad
-    const cityGeo = await getCityCoordinates(city);
+  // Cache check
+  const cacheKey = `${normalizeText(placeName)}:${normalizeText(city)}`;
+  if (placeCache.has(cacheKey)) {
+    return placeCache.get(cacheKey);
+  }
 
+  try {
+    const cityGeo = await getCityCoordinates(city);
     const canonicalCity = cityGeo?.text || city;
     const query = `${placeName}, ${canonicalCity}`;
 
@@ -559,96 +563,57 @@ async function enrichPlaceWithGoogle(
       return null;
     }
 
-    const findResults = await fetchFindPlaceCandidates(query, cityGeo);
-    let results = findResults;
-    let usedFindPlace = results.length > 0;
-
-    if (!usedFindPlace) {
-      results = await fetchTextSearchResults(query, cityGeo, placeType);
-    }
+    // Una sola llamada TextSearch (devuelve suficientes campos sin necesidad de Details)
+    const results = await fetchTextSearchResults(query, cityGeo, placeType);
 
     if (results.length === 0) {
       console.log(`No encontrado en Google Places: ${placeName}`);
+      placeCache.set(cacheKey, null);
       return null;
     }
 
-    const cityNames = [canonicalCity, city, cityGeo?.placeName].filter(Boolean) as string[];
+    const cityNames = [canonicalCity, city, cityGeo?.placeName].filter(
+      Boolean
+    ) as string[];
 
-    const buildPool = (items: any[]) => {
-      const candidates = items
-        .map((feature: any) => {
-          const location = feature?.geometry?.location;
-          if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
-            return null;
-          }
+    // Filtrar y ordenar candidatos
+    const candidates = results
+      .slice(0, 10)
+      .map((feature: any) => {
+        const location = feature?.geometry?.location;
+        if (
+          !location ||
+          typeof location.lat !== 'number' ||
+          typeof location.lng !== 'number'
+        ) {
+          return null;
+        }
 
-          const types = Array.isArray(feature?.types) ? feature.types : [];
-          if (isStreetLike(types)) {
-            return null;
-          }
+        const types = Array.isArray(feature?.types) ? feature.types : [];
+        if (isStreetLike(types)) return null;
 
-          const distanceKm = cityGeo
-            ? haversineKm(cityGeo.lat, cityGeo.lng, location.lat, location.lng)
-            : null;
+        const distanceKm = cityGeo
+          ? haversineKm(cityGeo.lat, cityGeo.lng, location.lat, location.lng)
+          : null;
 
-          if (distanceKm != null && distanceKm > MAX_CITY_RADIUS_KM) {
-            return null;
-          }
+        if (distanceKm != null && distanceKm > MAX_CITY_RADIUS_KM) return null;
 
-          return { feature, distanceKm };
-        })
-        .filter(Boolean) as { feature: any; distanceKm: number | null }[];
+        return { feature, distanceKm };
+      })
+      .filter(Boolean) as { feature: any; distanceKm: number | null }[];
 
-      const strictCandidates = candidates.filter((c) => isFeatureInCity(c.feature, cityNames));
-      const pool = strictCandidates.length > 0 ? strictCandidates : candidates;
-      return pool;
-    };
-
-    let pool = buildPool(results);
-
-    if (pool.length === 0 && usedFindPlace) {
-      const textResults = await fetchTextSearchResults(query, cityGeo, placeType);
-      pool = buildPool(textResults);
-      usedFindPlace = false;
-    }
+    // Preferir resultados dentro de la ciudad
+    const inCity = candidates.filter((c) => isFeatureInCity(c.feature, cityNames));
+    const pool = inCity.length > 0 ? inCity : candidates;
 
     if (pool.length === 0) {
       console.log(`No encontrado en Google Places (filtrado por ciudad): ${placeName}`);
+      placeCache.set(cacheKey, null);
       return null;
     }
 
-    const detailsCandidates: { feature: any; distanceKm: number | null }[] = [];
-    for (const candidate of pool.slice(0, DETAILS_CANDIDATE_LIMIT)) {
-      const placeId = candidate.feature?.place_id;
-      if (!placeId) continue;
-      const details = await fetchPlaceDetails(placeId);
-      if (!details) continue;
-
-      const location = details?.geometry?.location;
-      if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') continue;
-
-      if (isStreetLike(details?.types)) continue;
-
-      const distanceKm = cityGeo
-        ? haversineKm(cityGeo.lat, cityGeo.lng, location.lat, location.lng)
-        : null;
-
-      if (distanceKm != null && distanceKm > MAX_CITY_RADIUS_KM) continue;
-      if (cityGeo?.bbox && !isWithinBbox(location.lat, location.lng, cityGeo.bbox)) continue;
-      if (!isFeatureInCity(details, cityNames)) continue;
-      if (STRICT_PLACE_VALIDATION && !isNameMatch(placeName, details)) continue;
-
-      detailsCandidates.push({ feature: details, distanceKm });
-    }
-
-    const finalPool = detailsCandidates.length > 0 ? detailsCandidates : (STRICT_PLACE_VALIDATION ? [] : pool);
-
-    if (finalPool.length === 0) {
-      console.log(`No encontrado en Google Places (validación estricta): ${placeName}`);
-      return null;
-    }
-
-    finalPool.sort((a, b) => {
+    // Ordenar por relevancia
+    pool.sort((a, b) => {
       const aMatch = isNameMatch(placeName, a.feature);
       const bMatch = isNameMatch(placeName, b.feature);
       if (aMatch !== bMatch) return aMatch ? -1 : 1;
@@ -667,28 +632,35 @@ async function enrichPlaceWithGoogle(
       return 0;
     });
 
-    const feature = finalPool[0].feature;
-    const featureLocation = feature.geometry?.location;
+    const best = pool[0].feature;
+    const loc = best.geometry?.location;
 
-    return {
-      address: feature.formatted_address || feature.name,
+    const result = {
+      address: best.formatted_address || best.name,
       coordinates: {
-        lat: featureLocation.lat,
-        lng: featureLocation.lng,
+        lat: loc.lat,
+        lng: loc.lng,
       },
-      relevance: getRelevanceScore(feature),
+      relevance: getRelevanceScore(best),
     };
 
+    placeCache.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.error(`Error buscando en Google Places: ${placeName}`, error);
+    placeCache.set(cacheKey, null);
     return null;
   }
 }
 
+// ===== GEMINI — Generación de itinerario =====
+
 /**
- * Genera itinerario usando Groq API
+ * Genera itinerario usando Gemini 2.0 Flash (reemplaza Groq/Llama)
+ * - Respuesta JSON nativa (responseMimeType)
+ * - Más rápido que Groq con Llama 3.3 70B
  */
-async function generateItineraryWithGroq(
+async function generateItineraryWithGemini(
   cities: string[],
   interests: string[],
   days: number,
@@ -709,35 +681,21 @@ Por favor, genera un itinerario detallado. Recuerda:
 - Usar nombres OFICIALES y COMPLETOS de lugares reales
 - NO incluir direcciones ni coordenadas (se obtendrán automáticamente)`;
 
-  const groqResponse = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0,
-        max_tokens: 6000,
-        response_format: { type: 'json_object' },
-      }),
-    }
-  );
+  const response = await genAI.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: userPrompt,
+    config: {
+      systemInstruction: SYSTEM_PROMPT,
+      responseMimeType: 'application/json',
+      temperature: 0,
+      maxOutputTokens: 6000,
+    },
+  });
 
-  if (!groqResponse.ok) {
-    const errorText = await groqResponse.text();
-    throw new Error(`Error de Groq API ${groqResponse.status}: ${errorText}`);
-  }
+  const rawText = response.text ?? '{}';
 
-  const groqData = await groqResponse.json();
-
-  const rawText = groqData.choices[0].message.content;
+  // Gemini con responseMimeType: 'application/json' debería devolver JSON limpio,
+  // pero por seguridad limpiamos posibles fences
   const jsonText = rawText
     .replace(/```json\n?/g, '')
     .replace(/```\n?/g, '')
@@ -746,38 +704,68 @@ Por favor, genera un itinerario detallado. Recuerda:
   return JSON.parse(jsonText);
 }
 
+// ===== ENRIQUECIMIENTO PARALELO =====
+
 /**
  * Enriquece itinerario con coordenadas de Google Places
+ * OPTIMIZADO: ejecución paralela con concurrencia controlada
  */
-async function enrichItineraryWithCoordinates(itinerary: any, cities: string[]): Promise<any> {
+async function enrichItineraryWithCoordinates(
+  itinerary: any,
+  cities: string[]
+): Promise<any> {
   let enrichedCount = 0;
   let notFoundCount = 0;
 
+  // Paso 1: Pre-cachear todas las ciudades en paralelo
+  const uniqueCities = [
+    ...new Set(
+      itinerary.days.map((d: any) => resolveDayCity(d.city, cities))
+    ),
+  ];
+  await Promise.all(uniqueCities.map((c) => getCityCoordinates(c as string)));
+
+  // Paso 2: Construir lista de jobs (sin ejecutar todavía)
+  const jobs: { place: any; cityName: string }[] = [];
   for (const day of itinerary.days) {
     const cityName = resolveDayCity(day.city, cities);
-    if (day.city !== cityName) {
-      day.city = cityName;
-    }
-
+    day.city = cityName;
     for (const place of day.places) {
-      const placeData = await enrichPlaceWithGoogle(
-        place.name,
-        cityName,
-        place.type
-      );
+      jobs.push({ place, cityName });
+    }
+  }
 
-      if (placeData) {
-        place.address = placeData.address;
-        place.coordinates = placeData.coordinates;
-        enrichedCount++;
-      } else {
-        place.address = `${place.name}, ${cityName} (no encontrado en Google Places)`;
+  // Paso 3: Ejecutar con worker pool (concurrencia controlada)
+  let jobIndex = 0;
+
+  async function worker() {
+    while (jobIndex < jobs.length) {
+      const currentIndex = jobIndex++;
+      const { place, cityName } = jobs[currentIndex];
+      try {
+        const data = await enrichPlaceWithGoogle(place.name, cityName, place.type);
+        if (data) {
+          place.address = data.address;
+          place.coordinates = data.coordinates;
+          enrichedCount++;
+        } else {
+          place.address = `${place.name}, ${cityName} (no encontrado en Google Places)`;
+          place.coordinates = { lat: 0, lng: 0 };
+          place.address_status = 'not_found';
+          notFoundCount++;
+        }
+      } catch {
+        place.address = `${place.name}, ${cityName} (error)`;
         place.coordinates = { lat: 0, lng: 0 };
-        place.address_status = 'not_found';
+        place.address_status = 'error';
         notFoundCount++;
       }
     }
   }
+
+  await Promise.all(
+    Array.from({ length: Math.min(PLACES_CONCURRENCY, jobs.length) }, () => worker())
+  );
 
   return { itinerary, enrichedCount, notFoundCount };
 }
@@ -807,7 +795,9 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    console.log(`📝 Creating itinerary for user ${userId}: ${cities.join(', ')} (${days} days)`);
+    console.log(
+      `📝 Creating itinerary for user ${userId}: ${cities.join(', ')} (${days} days)`
+    );
 
     // 1. Guardar en BD (rápido)
     const { data: itinerary, error: dbError } = await supabase
@@ -820,7 +810,7 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
         budget: budget || null,
         about: about || null,
         groqStatus: 'pending',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -837,13 +827,13 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
     res.status(201).json({
       id: itinerary.id,
       status: 'pending',
-      message: 'Generando tu itinerario...'
+      message: 'Generando tu itinerario...',
     });
 
-    // 3. Procesar Groq en BACKGROUND (sin await)
+    // 3. Procesar en BACKGROUND (sin await)
     (async () => {
       try {
-        console.log(`🤖 Groq processing started for ${itinerary.id}...`);
+        console.log(`🤖 Gemini processing started for ${itinerary.id}...`);
 
         // Actualizar estado a "processing"
         await supabase
@@ -851,8 +841,8 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
           .update({ groqStatus: 'processing' })
           .eq('id', itinerary.id);
 
-        // Generar itinerario con Groq
-        const generatedItinerary = await generateItineraryWithGroq(
+        // Generar itinerario con Gemini 2.0 Flash
+        const generatedItinerary = await generateItineraryWithGemini(
           cities,
           interests,
           days,
@@ -860,13 +850,15 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
           about
         );
 
-        console.log(`📊 Groq response received for ${itinerary.id}`);
+        console.log(`📊 Gemini response received for ${itinerary.id}`);
 
-        // Enriquecer con coordenadas de Nominatim
+        // Enriquecer con coordenadas (PARALELO)
         const { itinerary: enrichedItinerary, enrichedCount, notFoundCount } =
           await enrichItineraryWithCoordinates(generatedItinerary, cities);
 
-        console.log(`📍 Enriched with coordinates: ${enrichedCount} found, ${notFoundCount} not found`);
+        console.log(
+          `📍 Enriched with coordinates: ${enrichedCount} found, ${notFoundCount} not found`
+        );
 
         // Guardar resultado
         const { error: updateError } = await supabase
@@ -874,7 +866,7 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
           .update({
             itinerary: enrichedItinerary,
             groqStatus: 'completed',
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', itinerary.id);
 
@@ -888,23 +880,20 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
             await supabase.rpc('decrement_token', { user_id: userId });
           } catch (tokenError) {
             console.error('Error decrementing token:', tokenError);
-            // No es fatal, continuar
           }
         }
 
         console.log(`✅ Itinerary ${itinerary.id} completed and saved`);
-
       } catch (error: any) {
         console.error(`❌ Error processing ${itinerary.id}:`, error.message);
 
-        // Guardar error en BD
         try {
           await supabase
             .from('travel')
             .update({
               groqStatus: 'error',
               error_message: error.message,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .eq('id', itinerary.id);
         } catch (saveError) {
@@ -912,7 +901,6 @@ app.post('/api/itineraries', async (req: Request, res: Response): Promise<void> 
         }
       }
     })(); // Fire and forget
-
   } catch (error: any) {
     console.error('Unexpected error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
@@ -936,7 +924,6 @@ app.get('/api/itineraries/:id', async (req: Request, res: Response): Promise<voi
     }
 
     res.json(data);
-
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -964,7 +951,6 @@ app.get('/api/itineraries', async (req: Request, res: Response): Promise<void> =
     }
 
     res.json(data || []);
-
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -1007,14 +993,16 @@ app.get('/sitemap.xml', (req: Request, res: Response): void => {
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...urls.map((url) => [
-      '  <url>',
-      `    <loc>${url.loc}</loc>`,
-      `    <lastmod>${url.lastmod}</lastmod>`,
-      `    <changefreq>${url.changefreq}</changefreq>`,
-      `    <priority>${url.priority}</priority>`,
-      '  </url>',
-    ].join('\n')),
+    ...urls.map((url) =>
+      [
+        '  <url>',
+        `    <loc>${url.loc}</loc>`,
+        `    <lastmod>${url.lastmod}</lastmod>`,
+        `    <changefreq>${url.changefreq}</changefreq>`,
+        `    <priority>${url.priority}</priority>`,
+        '  </url>',
+      ].join('\n')
+    ),
     '</urlset>',
   ].join('\n');
 
@@ -1022,14 +1010,10 @@ app.get('/sitemap.xml', (req: Request, res: Response): void => {
 });
 
 // ===== ANGULAR SSR - STATIC FILES =====
-
-// Serve static files from /browser
 app.use(express.static(browserDistFolder, { maxAge: '1y' }));
 
 // ===== ANGULAR SSR - RENDER =====
-// All other routes use Angular SSR
 app.use(async (req, res, next) => {
-  // Skip API and health routes - let them fall through
   if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
     return next();
   }
@@ -1047,12 +1031,19 @@ app.use(async (req, res, next) => {
 });
 
 // ===== ERROR HANDLING =====
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction): void => {
-  console.error('Error:', err);
-  res.status(500).json({
-    error: err.message || 'Internal server error'
-  });
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ): void => {
+    console.error('Error:', err);
+    res.status(500).json({
+      error: err.message || 'Internal server error',
+    });
+  }
+);
 
 // ===== START SERVER =====
 if (isMainModule(import.meta.url)) {

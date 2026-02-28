@@ -24,7 +24,6 @@
   },
   "private": true,
   "dependencies": {
-    "@netlify/angular-runtime": "^3.0.1",
     "@angular/common": "^20.3.0",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
@@ -39,7 +38,9 @@
     "@capacitor/haptics": "8.0.0",
     "@capacitor/keyboard": "8.0.0",
     "@capacitor/status-bar": "8.0.0",
+    "@google/genai": "^1.43.0",
     "@ionic/angular": "^8.7.17",
+    "@netlify/angular-runtime": "^3.0.1",
     "@primeuix/themes": "^2.0.3",
     "@supabase/supabase-js": "^2.89.0",
     "express": "^5.1.0",

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Seo } from '../../core/services/seo';
+/* import { Seo } from '../../core/services/seo'; */
 import { SEO_PAGES, SeoPageContent } from './seo-pages';
 
 type SeoUiText = {
@@ -50,7 +50,7 @@ const UI_ES: SeoUiText = {
 })
 export class SeoPage {
   private route = inject(ActivatedRoute);
-  private seo = inject(Seo);
+  /* private seo = inject(Seo); */
 
   page?: SeoPageContent;
   ui = UI_EN;
@@ -66,7 +66,7 @@ export class SeoPage {
     this.ui = page.lang === 'es-ES' ? UI_ES : UI_EN;
     this.relatedPages = SEO_PAGES.filter((item) => item.path !== page.path).slice(0, 6);
 
-    this.seo.set({
+/*     this.seo.set({
       title: page.metaTitle,
       description: page.description,
       path: `/${page.path}`,
@@ -86,6 +86,6 @@ export class SeoPage {
           url: this.seo.resolveUrl('/'),
         },
       },
-    });
+    }); */
   }
 }

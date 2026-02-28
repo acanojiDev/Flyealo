@@ -4,7 +4,7 @@ import { TravelFormComponent } from './travel-form-component/travel-form-compone
 import { Itinerary } from '../../core/services/itinerary';
 import { Travel } from '../../core/interfaces/travel';
 import { Auth } from '../../core/services/auth';
-import { Seo } from '../../core/services/seo';
+/* import { Seo } from '../../core/services/seo'; */
 @Component({
   selector: 'app-home-page',
   imports: [TravelFormComponent],
@@ -15,7 +15,7 @@ export class HomePage {
   itineraryService = inject(Itinerary);
   authService = inject(Auth);
   router = inject(Router);
-  seo = inject(Seo);
+/*   seo = inject(Seo); */
 
   user = this.authService.currentUser();
   isLoading = this.itineraryService.isLoading;
@@ -23,7 +23,7 @@ export class HomePage {
 
   constructor() {
     window.scrollTo(0, 0);
-    this.seo.set({
+/*     this.seo.set({
       title: 'Create your itinerary',
       description: 'Build a personalized travel itinerary with Flyealo.',
       path: '/generate-itinerary',
@@ -36,7 +36,7 @@ export class HomePage {
         url: this.seo.resolveUrl('/generate-itinerary'),
         inLanguage: 'en-ES',
       },
-    });
+    }); */
   }
 
   welcomeName(): string {
